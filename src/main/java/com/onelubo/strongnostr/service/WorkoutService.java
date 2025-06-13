@@ -14,7 +14,7 @@ public class WorkoutService {
 
     public Workout addExerciseToWorkout(Workout workout, Exercise exercise) {
         // Logic to add an exercise to an existing workout
-        workout.addExercise(exercise);
+        workout.updateWorkout(exercise);
         return workout;
     }
 
