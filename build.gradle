@@ -18,7 +18,13 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter:3.5.0'
+	implementation 'org.springframework.boot:spring-boot-starter-web:3.5.0'
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.0'
+	implementation 'org.springframework.boot:spring-boot-starter-security:3.5.0'
+	implementation 'org.springframework.boot:spring-boot-starter-validation:3.5.0'
+	implementation 'org.springframework.boot:spring-boot-starter-websocket:3.5.0'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis:3.5.0'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
