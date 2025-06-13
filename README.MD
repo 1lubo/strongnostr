@@ -1,0 +1,1 @@
+# WIP - Strength training app with Nostr integration
