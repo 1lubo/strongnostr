@@ -1,4 +1,4 @@
-package com._lubo.strongnostr;
+package com.onelubo.strongnostr;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
