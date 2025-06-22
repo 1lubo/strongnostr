@@ -34,6 +34,8 @@ public class Exercise {
     @LastModifiedDate
     private OffsetDateTime updatedAt;
 
+    public Exercise() {}
+
     public Exercise(String name, String description, String equipment, boolean isCustom, String createdByUserId) {
         this.name = name;
         this.description = description;

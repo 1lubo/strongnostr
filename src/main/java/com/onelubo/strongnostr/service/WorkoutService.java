@@ -1,5 +1,6 @@
 package com.onelubo.strongnostr.service;
 
+import com.onelubo.strongnostr.exception.WorkoutNotFoundException;
 import com.onelubo.strongnostr.model.Exercise;
 import com.onelubo.strongnostr.model.Workout;
 import com.onelubo.strongnostr.model.WorkoutExercise;
@@ -55,5 +56,10 @@ public class WorkoutService {
                                          exercise.getName(), exercise.getId()));
                });
         return workoutRepository.save(workout);
+    }
+
+    public Workout getWorkoutById(String workoutID) {
+        return workoutRepository.findById(workoutID)
+                .orElseThrow(() -> new WorkoutNotFoundException(workoutID));
     }
 }

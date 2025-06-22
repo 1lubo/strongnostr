@@ -1,14 +1,14 @@
 package com.onelubo.strongnostr.rest;
 
-import com.onelubo.strongnostr.model.Exercise;
+import com.onelubo.strongnostr.dto.ExerciseSetDto;
+import com.onelubo.strongnostr.exception.WorkoutNotFoundException;
 import com.onelubo.strongnostr.model.Workout;
-import com.onelubo.strongnostr.model.WorkoutSet;
 import com.onelubo.strongnostr.service.WorkoutService;
+import jakarta.validation.Valid;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("workout")
@@ -21,12 +21,26 @@ public class WorkoutController {
     }
 
     @PostMapping()
-    public ResponseEntity<Workout> createWorkout(@RequestBody Exercise exercise, WorkoutSet workoutSet) {
-        if (exercise == null || exercise.getName() == null || exercise.getName().isBlank()) {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity<?> createWorkout(@Valid @RequestBody ExerciseSetDto workoutDto, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(bindingResult.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).toList());
         }
 
-        Workout createdWorkout = workoutService.createWorkout(exercise, workoutSet);
+        Workout createdWorkout = workoutService.createWorkout(workoutDto.getExercise(), workoutDto.getWorkoutSet());
         return ResponseEntity.ok(createdWorkout);
+    }
+
+    @PostMapping("/addExercise/{workoutId}")
+    public ResponseEntity<?> addExercise(@Valid @RequestBody ExerciseSetDto workoutDto,
+                                               @PathVariable("workoutId") String workoutId) {
+        try {
+            Workout existingWorkout = workoutService.getWorkoutById(workoutId);
+            Workout updatedWorkout = workoutService.addExerciseToWorkout(existingWorkout, workoutDto.getExercise(),
+                                                       workoutDto.getWorkoutSet());
+            return ResponseEntity.ok(updatedWorkout);
+
+        } catch (WorkoutNotFoundException e) {
+            return ResponseEntity.status(404).body("Workout with ID " + workoutId + " not found");
+        }
     }
 }
