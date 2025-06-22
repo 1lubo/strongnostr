@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class WorkoutExercise {
     public WorkoutExercise(String exerciseId, String exerciseName, List<WorkoutSet> sets) {
         this.exerciseId = exerciseId;
         this.exerciseName = exerciseName;
-        this.sets = sets;
+        this.sets = new ArrayList<>(sets);
         this.calculateMetrics();
     }
 
@@ -100,6 +101,13 @@ public class WorkoutExercise {
 
     public String getExerciseName() {
         return exerciseName;
+    }
+
+    public void addWorkoutSet(WorkoutSet set) {
+        if (set != null) {
+            sets.add(set);
+            this.calculateMetrics();
+        }
     }
 
     @Override

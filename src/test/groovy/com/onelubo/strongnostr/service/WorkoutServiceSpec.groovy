@@ -142,4 +142,40 @@ class WorkoutServiceSpec extends Specification {
         and: "The workout should be saved in the database"
         1 * workoutRepository.save(workout) >> workout
     }
+
+    def "should add a set of the same exercise to an existing WorkoutExercise"() {
+        given: "A workout with an existing exercise"
+        def exerciseName = "Bench Press"
+        def exerciseDescription = "A compound exercise for upper body strength"
+        def equipment = "Barbell"
+        def exerciseId = UUID.randomUUID().toString()
+        def workoutId = UUID.randomUUID().toString()
+        def exercise = new Exercise(exerciseName, exerciseDescription, equipment)
+        exercise.setId(exerciseId)
+        def workoutSet = new WorkoutSet(80.0, 5)
+        def workoutExercise = new WorkoutExercise(exercise.getId(), exercise.getName(), List.of(workoutSet))
+        def workout = new Workout()
+        workout.addExercise(workoutExercise)
+        workout.setId(workoutId)
+        def identicalExercise = new Exercise(exerciseName, exerciseDescription, equipment)
+        def newSet = new WorkoutSet(85.0, 3)
+        def updatedWorkout = new Workout()
+        def updatedWorkoutExercise = new WorkoutExercise(exercise.getId(), exercise.getName(), List.of(workoutSet, newSet))
+        updatedWorkout.addExercise(updatedWorkoutExercise)
+        updatedWorkout.setId(workoutId)
+        exerciseService.addExercise(_ as Exercise) >> exercise
+
+        when: "Adding a new set to the existing WorkoutExercise"
+        workoutService.addExerciseToWorkout(workout, identicalExercise, newSet)
+
+
+        then: "The set should be added successfully"
+        workout.getExercises().size() == 1
+        workout.getExercises()[0].getTotalSets() == 2
+        workout.getExercises()[0].getTotalReps() == workoutSet.getReps() + newSet.getReps()
+        workout.getExercises()[0].getTotalVolume() == (workoutSet.getWeight() * workoutSet.getReps()) + (newSet.getWeight() * newSet.getReps())
+
+        and: "The workout should be saved in the database"
+        1 * workoutRepository.save(_ as Workout) >> updatedWorkout
+    }
 }

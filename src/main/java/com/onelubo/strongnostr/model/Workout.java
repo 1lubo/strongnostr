@@ -85,10 +85,10 @@ public class Workout {
 
     public void updateWorkout(WorkoutExercise newExercise) {
         exercises.stream()
-                .filter(exercise -> exercise.equals(newExercise))
+                .filter(exercise -> exercise.getExerciseId().equals(newExercise.getExerciseId()))
                 .findFirst()
                 .ifPresentOrElse(
-                        exercise -> exercises.remove(exercise),
+                        exercise -> exercise.addWorkoutSet(newExercise.getHeaviestSet()),
                         () -> exercises.add(newExercise)
                                 );
         this.calculateMetrics();
