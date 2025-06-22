@@ -20,6 +20,16 @@ public class WorkoutController {
         this.workoutService = workoutService;
     }
 
+    @GetMapping("/{workoutId}")
+    public ResponseEntity<?> getWorkoutById(@PathVariable("workoutId") String workoutId) {
+        try {
+            Workout workout = workoutService.getWorkoutById(workoutId);
+            return ResponseEntity.ok(workout);
+        } catch (WorkoutNotFoundException e) {
+            return ResponseEntity.status(404).body(String.format("Workout with ID '%s' not found", workoutId));
+        }
+    }
+
     @PostMapping()
     public ResponseEntity<?> createWorkout(@Valid @RequestBody ExerciseSetDto workoutDto, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {

@@ -28,7 +28,9 @@ public class WorkoutService {
 
         Workout workout = new Workout();
         Exercise existingExercise = exerciseService.addExercise(exercise);
-        WorkoutExercise workoutExercise = new WorkoutExercise(existingExercise.getId(), existingExercise.getName(), List.of(set));
+        WorkoutExercise workoutExercise = new WorkoutExercise(existingExercise.getId(),
+                                                              existingExercise.getName(),
+                                                              existingExercise.getEquipment(), List.of(set));
         workout.addExercise(workoutExercise);
         return workoutRepository.save(workout);
     }
@@ -39,7 +41,9 @@ public class WorkoutService {
         Objects.requireNonNull(set);
 
         Exercise existingExercise = exerciseService.addExercise(exercise);
-        WorkoutExercise workoutExercise = new WorkoutExercise(existingExercise.getId(), existingExercise.getName(), List.of(set));
+        WorkoutExercise workoutExercise = new WorkoutExercise(existingExercise.getId(),
+                                                              existingExercise.getName(),
+                                                              existingExercise.getEquipment(), List.of(set));
         workout.updateWorkout(workoutExercise);
 
         return workoutRepository.save(workout);

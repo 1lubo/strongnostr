@@ -30,7 +30,7 @@ class WorkoutServiceSpec extends Specification {
         def workoutSet = new WorkoutSet(100.0, 5)
         def expectedWorkout = new Workout()
         expectedWorkout.setId(UUID.randomUUID().toString())
-        expectedWorkout.addExercise(new WorkoutExercise(savedExercise.getId(), savedExercise.getName(), List.of(workoutSet)))
+        expectedWorkout.addExercise(new WorkoutExercise(savedExercise.getId(), savedExercise.getName(), savedExercise.getEquipment(), List.of(workoutSet),))
         exerciseService.addExercise(_ as Exercise) >> savedExercise
 
         when: "Creating a workout"
@@ -63,7 +63,7 @@ class WorkoutServiceSpec extends Specification {
         def workoutSet = new WorkoutSet(60.0, 8)
         def expectedWorkout = new Workout()
         expectedWorkout.setId(UUID.randomUUID().toString())
-        expectedWorkout.addExercise(new WorkoutExercise(null, exerciseName, List.of(workoutSet)))
+        expectedWorkout.addExercise(new WorkoutExercise(newExercise.getId(), newExercise.getName(), newExercise.getEquipment(), List.of(workoutSet),))
         exerciseService.addExercise(_ as Exercise) >> newExercise
 
         when: "Creating a workout with a new exercise"
@@ -99,7 +99,7 @@ class WorkoutServiceSpec extends Specification {
         newExercise.setId(UUID.randomUUID().toString())
         def set = new WorkoutSet(80.0, 5)
         def existingWorkout = new Workout()
-        existingWorkout.addExercise(new WorkoutExercise(exercise1.getId(), exercise1.getName(), List.of(new WorkoutSet(80.0, 5))))
+        existingWorkout.addExercise(new WorkoutExercise(exercise1.getId(), exercise1.getName(), exercise1.getEquipment(), List.of(new WorkoutSet(80.0, 5)),))
         existingWorkout.setId(UUID.randomUUID().toString())
         exerciseService.addExercise(_ as Exercise) >> newExercise
 
@@ -124,8 +124,8 @@ class WorkoutServiceSpec extends Specification {
         def exercise2 = new Exercise("Deadlift", null, "Barbell")
         exercise1.setId(UUID.randomUUID().toString())
         exercise2.setId(UUID.randomUUID().toString())
-        def workoutExercise1 = new WorkoutExercise(exercise1.getId(), exercise1.getName(), List.of(new WorkoutSet(80.0, 5)))
-        def workoutExercise2 = new WorkoutExercise(exercise2.getId(), exercise2.getName(), List.of(new WorkoutSet(100.0, 3)))
+        def workoutExercise1 = new WorkoutExercise(exercise1.getId(), exercise1.getName(),exercise1.getEquipment(), List.of(new WorkoutSet(80.0, 5)),)
+        def workoutExercise2 = new WorkoutExercise(exercise2.getId(), exercise2.getName(),exercise2.getEquipment(), List.of(new WorkoutSet(100.0, 3)),)
         def workout = new Workout()
         workout.addExercise(workoutExercise1)
         workout.addExercise(workoutExercise2)
@@ -153,14 +153,14 @@ class WorkoutServiceSpec extends Specification {
         def exercise = new Exercise(exerciseName, exerciseDescription, equipment)
         exercise.setId(exerciseId)
         def workoutSet = new WorkoutSet(80.0, 5)
-        def workoutExercise = new WorkoutExercise(exercise.getId(), exercise.getName(), List.of(workoutSet))
+        def workoutExercise = new WorkoutExercise(exercise.getId(), exercise.getName(), exercise.getEquipment(), List.of(workoutSet),)
         def workout = new Workout()
         workout.addExercise(workoutExercise)
         workout.setId(workoutId)
         def identicalExercise = new Exercise(exerciseName, exerciseDescription, equipment)
         def newSet = new WorkoutSet(85.0, 3)
         def updatedWorkout = new Workout()
-        def updatedWorkoutExercise = new WorkoutExercise(exercise.getId(), exercise.getName(), List.of(workoutSet, newSet))
+        def updatedWorkoutExercise = new WorkoutExercise(exercise.getId(), exercise.getName(), exercise.getEquipment(), List.of(workoutSet, newSet),)
         updatedWorkout.addExercise(updatedWorkoutExercise)
         updatedWorkout.setId(workoutId)
         exerciseService.addExercise(_ as Exercise) >> exercise

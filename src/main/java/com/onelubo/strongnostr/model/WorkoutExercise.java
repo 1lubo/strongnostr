@@ -22,6 +22,9 @@ public class WorkoutExercise {
     @NotBlank(message = "Exercise name cannot be blank")
     private String exerciseName;
 
+    @NotBlank(message = "Exercise equipment is required")
+    private String equipment;
+
     @NotEmpty(message = "At least one set is required for the exercise")
     @Valid
     private List<WorkoutSet> sets;
@@ -33,9 +36,10 @@ public class WorkoutExercise {
     private Double averageRpe; // Average RPE for the sets
     private Integer totalReps; // Total reps across all sets
 
-    public WorkoutExercise(String exerciseId, String exerciseName, List<WorkoutSet> sets) {
+    public WorkoutExercise(String exerciseId, String exerciseName, String equipment, List<WorkoutSet> sets) {
         this.exerciseId = exerciseId;
         this.exerciseName = exerciseName;
+        this.equipment = equipment;
         this.sets = new ArrayList<>(sets);
         this.calculateMetrics();
     }
@@ -114,6 +118,7 @@ public class WorkoutExercise {
     public String toString() {
         return "WorkoutExercise{" +
                 "exerciseName=" +  exerciseName +
+                ", equipment='" + equipment + '\'' +
                 ", totalVolume='" + totalVolume + '\'' +
                 ", totalReps=" + totalReps +
                 '}';
