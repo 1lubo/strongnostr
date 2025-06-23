@@ -1,8 +1,13 @@
 spring:
   application:
     name: strongnostr
+
   data:
     mongodb:
       uri: mongodb://localhost:27017/strongnostr
       auto-index-creation: true
       field-naming-strategy: org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
+
+  jwt:
+    secret: super-secret-key
+    expiration: 86400000
