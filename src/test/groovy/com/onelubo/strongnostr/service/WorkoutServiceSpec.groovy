@@ -5,6 +5,8 @@ import com.onelubo.strongnostr.model.workout.Workout
 import com.onelubo.strongnostr.model.workout.WorkoutExercise
 import com.onelubo.strongnostr.model.workout.WorkoutSet
 import com.onelubo.strongnostr.repository.WorkoutRepository
+import com.onelubo.strongnostr.service.workout.ExerciseService
+import com.onelubo.strongnostr.service.workout.WorkoutService
 import spock.lang.Specification
 
 class WorkoutServiceSpec extends Specification {

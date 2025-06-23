@@ -1,4 +1,4 @@
-package com.onelubo.strongnostr.service;
+package com.onelubo.strongnostr.service.workout;
 
 import com.onelubo.strongnostr.exception.WorkoutNotFoundException;
 import com.onelubo.strongnostr.model.workout.Exercise;

@@ -2,6 +2,7 @@ package com.onelubo.strongnostr.service
 
 import com.onelubo.strongnostr.model.workout.Exercise
 import com.onelubo.strongnostr.repository.ExerciseRepository
+import com.onelubo.strongnostr.service.workout.ExerciseService
 import spock.lang.Specification
 import spock.lang.Unroll
 
