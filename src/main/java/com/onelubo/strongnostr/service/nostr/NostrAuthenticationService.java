@@ -1,4 +1,4 @@
-package com.onelubo.strongnostr.service;
+package com.onelubo.strongnostr.service.nostr;
 
 import com.onelubo.strongnostr.dto.NostrAuthChallenge;
 import com.onelubo.strongnostr.dto.NostrAuthRequest;
@@ -120,7 +120,7 @@ public class NostrAuthenticationService {
                 event.getKind() == 22242 && // NIP-46 authentication event kind
                 event.getPubkey() != null && !event.getPubkey().trim().isEmpty() &&
                 event.getContent() != null && !event.getContent().trim().isEmpty() &&
-                event.getSig() != null && !event.getSig().trim().isEmpty() &&
+                event.getSignature() != null && !event.getSignature().trim().isEmpty() &&
                 event.getCreatedAt() > 0;
     }
 

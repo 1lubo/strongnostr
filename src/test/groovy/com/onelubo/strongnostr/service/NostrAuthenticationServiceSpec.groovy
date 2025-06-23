@@ -8,6 +8,8 @@ import com.onelubo.strongnostr.nostr.NostrEventVerifier
 import com.onelubo.strongnostr.nostr.NostrKeyManager
 import com.onelubo.strongnostr.repository.UserRepository
 import com.onelubo.strongnostr.security.JwtTokenProvider
+import com.onelubo.strongnostr.service.nostr.NostrAuthenticationService
+import com.onelubo.strongnostr.util.NostrUtils
 import spock.lang.Specification
 
 import java.time.Instant
@@ -18,12 +20,10 @@ class NostrAuthenticationServiceSpec extends Specification{
     NostrKeyManager nostrKeyManager
     JwtTokenProvider jwtTokenProvider
     NostrAuthenticationService nostrAuthenticationService
-
-    private static final String VALID_NPUB = "npub1abc123def456ghi789";
+    
     private static final String VALID_HEX = "02a1b2c3d4e5f6789abc123def456";
     private static final String VALID_USERNAME = "testuser";
     private static final String JWT_TOKEN = "jwt.token.here";
-    private static final int VALID_EVENT_KIND = 22242; // Assuming this is the kind for authentication events
 
     def setup() {
         userRepository = Mock(UserRepository)
@@ -59,8 +59,8 @@ class NostrAuthenticationServiceSpec extends Specification{
     def "should authenticate existing user with valid event"() {
         given: "An existing user and a valid Nostr event"
         def existingUser = createTestUser()
-        def validEvent = createValidAuthEvent()
-        userRepository.findByNostrPubKey(VALID_NPUB) >> Optional.of(existingUser)
+        def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
+        userRepository.findByNostrPubKey(NostrUtils.VALID_NPUB) >> Optional.of(existingUser)
         nostrEventVerifier.verifyEventSignature(_) >> true
         jwtTokenProvider.generateToken(existingUser.getId()) >> JWT_TOKEN
 
@@ -77,12 +77,12 @@ class NostrAuthenticationServiceSpec extends Specification{
 
     def "should create new user on first authentication"() {
         given: "A valid Nostr event and no existing user"
-        def validEvent = createValidAuthEvent()
+        def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
         def newUser = createTestUser()
         nostrEventVerifier.verifyEventSignature(validEvent) >> true
-        userRepository.findByNostrPubKey(VALID_NPUB) >> Optional.empty()
+        userRepository.findByNostrPubKey(NostrUtils.VALID_NPUB) >> Optional.empty()
         userRepository.save(_ as User) >> newUser
-        nostrKeyManager.npubToHex(VALID_NPUB) >> VALID_HEX
+        nostrKeyManager.npubToHex(NostrUtils.VALID_NPUB) >> VALID_HEX
         nostrEventVerifier.verifyEventSignature(validEvent) >> true
         jwtTokenProvider.generateToken(newUser.getId()) >> JWT_TOKEN
 
@@ -113,8 +113,8 @@ class NostrAuthenticationServiceSpec extends Specification{
         newProfile.setName(newName)
         newProfile.setAbout(newAbout)
         newProfile.setAvatarUrl(mewAvatarUrl)
-        def validEvent = createValidAuthEvent()
-        userRepository.findByNostrPubKey(VALID_NPUB) >> Optional.of(existingUser)
+        def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
+        userRepository.findByNostrPubKey(NostrUtils.VALID_NPUB) >> Optional.of(existingUser)
         nostrEventVerifier.verifyEventSignature(validEvent) >> true
         jwtTokenProvider.generateToken(existingUser.getId()) >> JWT_TOKEN
 
@@ -151,7 +151,7 @@ class NostrAuthenticationServiceSpec extends Specification{
 
     def "should reject an expired challenge"() {
         given: "An expired authentication challenge"
-        def expiredEvent = createValidAuthEvent()
+        def expiredEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
         expiredEvent.setCreatedAt(Instant.now().getEpochSecond() - 400) // Set to 400 seconds in the past
 
         when: "Authenticating with the expired challenge"
@@ -167,7 +167,7 @@ class NostrAuthenticationServiceSpec extends Specification{
 
     def "should reject an event with invalid signature"() {
         given: "A valid Nostr event with an invalid signature"
-        def validEvent = createValidAuthEvent()
+        def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
         nostrEventVerifier.verifyEventSignature(validEvent) >> false
 
         when: "Authenticating with the event"
@@ -183,7 +183,7 @@ class NostrAuthenticationServiceSpec extends Specification{
 
     def "should reject an event with invalid content"() {
         given: "A valid Nostr event with invalid content"
-        def invalidContentEvent = createValidAuthEvent()
+        def invalidContentEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
         invalidContentEvent.setContent("Invalid content format")
 
         when: "Authenticating with the event"
@@ -198,26 +198,6 @@ class NostrAuthenticationServiceSpec extends Specification{
     }
 
     User createTestUser() {
-        return new User(VALID_USERNAME, VALID_NPUB, VALID_HEX)
-    }
-
-    NostrUserProfile createTestProfile() {
-        NostrUserProfile profile = new NostrUserProfile()
-        profile.setName("Test User")
-        profile.setAbout("This is a test user profile.")
-        profile.setAvatarUrl("https://example.com/profile.jpg")
-        profile.setLud16("testLightningAddress")
-        profile.setNip05("nostrPleb1@nostrplebs.com")
-    }
-
-    NostrEvent createValidAuthEvent() {
-        NostrEvent event = new NostrEvent()
-        event.setId(UUID.randomUUID().toString())
-        event.setPubkey(VALID_NPUB)
-        event.setCreatedAt(Instant.now().getEpochSecond())
-        event.setKind(VALID_EVENT_KIND)
-        event.setContent("Strong Nostr authentication challenge: " + UUID.randomUUID().toString() + " at " + Instant.now().getEpochSecond())
-        event.setSig("validSignature")
-        return event
+        return new User(VALID_USERNAME, NostrUtils.VALID_NPUB, VALID_HEX)
     }
 }
