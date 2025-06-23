@@ -1,7 +1,7 @@
 package com.onelubo.strongnostr.dto;
 
-import com.onelubo.strongnostr.model.Exercise;
-import com.onelubo.strongnostr.model.WorkoutSet;
+import com.onelubo.strongnostr.model.workout.Exercise;
+import com.onelubo.strongnostr.model.workout.WorkoutSet;
 import jakarta.validation.constraints.NotNull;
 
 public class ExerciseSetDto {

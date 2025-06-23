@@ -1,4 +1,4 @@
-package com.onelubo.strongnostr.model;
+package com.onelubo.strongnostr.model.workout;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

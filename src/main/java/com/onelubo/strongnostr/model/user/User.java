@@ -1,5 +1,6 @@
-package com.onelubo.strongnostr.model;
+package com.onelubo.strongnostr.model.user;
 
+import com.onelubo.strongnostr.dto.NostrUserProfile;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -35,5 +36,29 @@ public class User {
     /**
      * Nostr profile metadata (NIP-01 standard)
      */
-//    private NostrProfile nostrProfile;
+    private NostrUserProfile nostrProfile;
+
+    private boolean verified = false;
+
+    public User(String username, String nostrPublicKey, String nostrPublicKeyHex) {
+        this.username = username;
+        this.nostrPublicKey = nostrPublicKey;
+        this.nostrPublicKeyHex = nostrPublicKeyHex;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public NostrUserProfile getNostrProfile() {
+        return nostrProfile;
+    }
+
+    public void setNostrProfile(NostrUserProfile nostrProfile) {
+        this.nostrProfile = nostrProfile;
+    }
+
+    public void markAsVerified() {
+        this.verified = true;
+    }
 }
