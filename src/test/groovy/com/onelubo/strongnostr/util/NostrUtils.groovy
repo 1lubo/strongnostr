@@ -15,7 +15,7 @@ class NostrUtils {
     public static final String PUBLIC_FROM_PRIVATE_KEY_HEX = "7e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e"
     public static final String VALID_PUBLIC_KEY_HEX = "1afe0c74e3d7784eba93a5e3fa554a6eeb01928d12739ae8ba4832786808e36d"
     public static final String INVALID_SIGNATURE = "invalidsignature1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
-    public static final int VALID_EVENT_KIND = 22242; // Assuming this is the kind for authentication events
+    public static final int VALID_EVENT_KIND = 22242 // Assuming this is the kind for authentication events
 
 
     static NostrEvent createValidAuthEvent(String npub, int kind) {
@@ -34,13 +34,13 @@ class NostrUtils {
     }
 
     static byte[] hexStringToByteArray(String hex) {
-        int len = hex.length();
-        byte[] data = new byte[len / 2];
+        int len = hex.length()
+        byte[] data = new byte[len / 2]
         for (int i = 0; i < len; i += 2) {
             data[i.intdiv(2)] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i+1), 16));
+                    + Character.digit(hex.charAt(i+1), 16))
         }
-        return data;
+        return data
     }
 
     static boolean isValidHex(String hex) {
