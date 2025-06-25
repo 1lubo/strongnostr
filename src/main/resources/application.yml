@@ -11,3 +11,8 @@ spring:
   jwt:
     secret: super-secret-key
     expiration: 86400000
+
+  crypto:
+    provider: BouncyCastle
+    curve: secp256k1
+    key-size: 256
