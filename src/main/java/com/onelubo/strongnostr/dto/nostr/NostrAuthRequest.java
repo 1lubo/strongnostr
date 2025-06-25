@@ -1,4 +1,4 @@
-package com.onelubo.strongnostr.dto;
+package com.onelubo.strongnostr.dto.nostr;
 
 import com.onelubo.strongnostr.nostr.NostrEvent;
 import jakarta.validation.Valid;

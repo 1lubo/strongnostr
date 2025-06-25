@@ -1,4 +1,4 @@
-package com.onelubo.strongnostr.dto;
+package com.onelubo.strongnostr.dto.nostr;
 
 import java.time.Instant;
 

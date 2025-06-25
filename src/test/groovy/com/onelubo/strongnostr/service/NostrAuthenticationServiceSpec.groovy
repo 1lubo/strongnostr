@@ -1,7 +1,7 @@
 package com.onelubo.strongnostr.service
 
-import com.onelubo.strongnostr.dto.NostrAuthRequest
-import com.onelubo.strongnostr.dto.NostrUserProfile
+import com.onelubo.strongnostr.dto.nostr.NostrAuthRequest
+import com.onelubo.strongnostr.dto.nostr.NostrUserProfile
 import com.onelubo.strongnostr.model.user.User
 import com.onelubo.strongnostr.nostr.NostrEvent
 import com.onelubo.strongnostr.nostr.NostrEventVerifier

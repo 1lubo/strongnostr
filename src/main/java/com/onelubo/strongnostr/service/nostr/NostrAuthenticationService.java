@@ -1,9 +1,9 @@
 package com.onelubo.strongnostr.service.nostr;
 
-import com.onelubo.strongnostr.dto.NostrAuthChallenge;
-import com.onelubo.strongnostr.dto.NostrAuthRequest;
-import com.onelubo.strongnostr.dto.NostrAuthResult;
-import com.onelubo.strongnostr.dto.NostrUserProfile;
+import com.onelubo.strongnostr.dto.nostr.NostrAuthChallenge;
+import com.onelubo.strongnostr.dto.nostr.NostrAuthRequest;
+import com.onelubo.strongnostr.dto.nostr.NostrAuthResult;
+import com.onelubo.strongnostr.dto.nostr.NostrUserProfile;
 import com.onelubo.strongnostr.model.user.User;
 import com.onelubo.strongnostr.nostr.NostrEvent;
 import com.onelubo.strongnostr.nostr.NostrEventVerifier;

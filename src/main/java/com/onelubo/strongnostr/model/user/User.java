@@ -1,6 +1,6 @@
 package com.onelubo.strongnostr.model.user;
 
-import com.onelubo.strongnostr.dto.NostrUserProfile;
+import com.onelubo.strongnostr.dto.nostr.NostrUserProfile;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
