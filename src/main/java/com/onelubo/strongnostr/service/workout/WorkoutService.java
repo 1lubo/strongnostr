@@ -22,12 +22,14 @@ public class WorkoutService {
         this.workoutRepository = workoutRepository;
     }
 
-    public Workout createWorkout(Exercise exercise, WorkoutSet set) {
+    public Workout createWorkout(Exercise exercise, WorkoutSet set, String userNPub) {
         Objects.requireNonNull(exercise);
         Objects.requireNonNull(set);
+        Objects.requireNonNull(userNPub);
 
         Workout workout = new Workout();
-        Exercise existingExercise = exerciseService.addExercise(exercise);
+        exercise.setCreatedByUserId(userNPub);
+        Exercise existingExercise = exerciseService.findOrCreateExercise(exercise);
         WorkoutExercise workoutExercise = new WorkoutExercise(existingExercise.getId(),
                                                               existingExercise.getName(),
                                                               existingExercise.getEquipment(), List.of(set));
@@ -40,7 +42,7 @@ public class WorkoutService {
         Objects.requireNonNull(workout);
         Objects.requireNonNull(set);
 
-        Exercise existingExercise = exerciseService.addExercise(exercise);
+        Exercise existingExercise = exerciseService.findOrCreateExercise(exercise);
         WorkoutExercise workoutExercise = new WorkoutExercise(existingExercise.getId(),
                                                               existingExercise.getName(),
                                                               existingExercise.getEquipment(), List.of(set));

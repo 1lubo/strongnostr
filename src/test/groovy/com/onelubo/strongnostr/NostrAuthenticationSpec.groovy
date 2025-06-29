@@ -33,6 +33,7 @@ class NostrAuthenticationSpec extends BaseNostrSpec {
         def nostrEvent = createSignedNostrEvent(npub, nSecHex, challenge.getChallenge())
 
         def authRequest = [
+                challengeId: challenge.getId(),
                 nostrEvent: nostrEvent,
                 userProfile: createNostrUserProfile("fiatJaf@nostr.com", "fiatjaf", "https://example.com/avatar.png")
         ] as NostrAuthRequest

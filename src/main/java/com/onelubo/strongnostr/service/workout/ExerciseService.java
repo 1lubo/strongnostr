@@ -43,7 +43,7 @@ public class ExerciseService {
         );
     }
 
-    public Exercise addExercise(Exercise exercise) {
+    public Exercise findOrCreateExercise(Exercise exercise) {
         Optional<Exercise> existingExercise = exerciseRepository.findByNameAndDescriptionAndEquipment(
                 exercise.getName(), exercise.getDescription(), exercise.getEquipment());
 

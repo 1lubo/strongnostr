@@ -7,6 +7,7 @@ import com.onelubo.strongnostr.model.workout.WorkoutSet
 import com.onelubo.strongnostr.repository.WorkoutRepository
 import com.onelubo.strongnostr.service.workout.ExerciseService
 import com.onelubo.strongnostr.service.workout.WorkoutService
+import com.onelubo.strongnostr.util.NostrUtils
 import spock.lang.Specification
 
 class WorkoutServiceSpec extends Specification {
@@ -33,13 +34,13 @@ class WorkoutServiceSpec extends Specification {
         def expectedWorkout = new Workout()
         expectedWorkout.setId(UUID.randomUUID().toString())
         expectedWorkout.addExercise(new WorkoutExercise(savedExercise.getId(), savedExercise.getName(), savedExercise.getEquipment(), List.of(workoutSet),))
-        exerciseService.addExercise(_ as Exercise) >> savedExercise
+        exerciseService.findOrCreateExercise(_ as Exercise,) >> savedExercise
 
         when: "Creating a workout"
-        def result = workoutService.createWorkout(exercise, workoutSet)
+        def result = workoutService.createWorkout(exercise, workoutSet, NostrUtils.VALID_NPUB)
 
         then: "The existing exercise should be found in the database and used in the workout"
-        1 * exerciseService.addExercise(exercise) >> savedExercise
+        1 * exerciseService.findOrCreateExercise(exercise) >> savedExercise
 
         and: "The workout should be created successfully"
         result != null
@@ -66,13 +67,13 @@ class WorkoutServiceSpec extends Specification {
         def expectedWorkout = new Workout()
         expectedWorkout.setId(UUID.randomUUID().toString())
         expectedWorkout.addExercise(new WorkoutExercise(newExercise.getId(), newExercise.getName(), newExercise.getEquipment(), List.of(workoutSet),))
-        exerciseService.addExercise(_ as Exercise) >> newExercise
+        exerciseService.findOrCreateExercise(_ as Exercise,) >> newExercise
 
         when: "Creating a workout with a new exercise"
-        def result = workoutService.createWorkout(exercise, workoutSet)
+        def result = workoutService.createWorkout(exercise, workoutSet, NostrUtils.VALID_NPUB)
 
         then: "The new exercise should be created and saved in the database and used in the workout"
-        1 * exerciseService.addExercise(exercise) >> newExercise
+        1 * exerciseService.findOrCreateExercise(exercise) >> newExercise
 
         then: "The workout should be created and saved successfully"
         result != null
@@ -103,13 +104,13 @@ class WorkoutServiceSpec extends Specification {
         def existingWorkout = new Workout()
         existingWorkout.addExercise(new WorkoutExercise(exercise1.getId(), exercise1.getName(), exercise1.getEquipment(), List.of(new WorkoutSet(80.0, 5)),))
         existingWorkout.setId(UUID.randomUUID().toString())
-        exerciseService.addExercise(_ as Exercise) >> newExercise
+        exerciseService.findOrCreateExercise(_ as Exercise,) >> newExercise
 
         when: "Adding a new exercise to the workout"
         workoutService.addExerciseToWorkout(existingWorkout, exercise2, set)
 
         then: "the new exercise should be created and saved in the database and used in the workout"
-        1 * exerciseService.addExercise(exercise2) >> newExercise
+        1 * exerciseService.findOrCreateExercise(exercise2,) >> newExercise
 
         then: "The workout should be updated successfully"
         existingWorkout.getExercises().size() == 2
@@ -165,7 +166,7 @@ class WorkoutServiceSpec extends Specification {
         def updatedWorkoutExercise = new WorkoutExercise(exercise.getId(), exercise.getName(), exercise.getEquipment(), List.of(workoutSet, newSet),)
         updatedWorkout.addExercise(updatedWorkoutExercise)
         updatedWorkout.setId(workoutId)
-        exerciseService.addExercise(_ as Exercise) >> exercise
+        exerciseService.findOrCreateExercise(_ as Exercise,) >> exercise
 
         when: "Adding a new set to the existing WorkoutExercise"
         workoutService.addExerciseToWorkout(workout, identicalExercise, newSet)

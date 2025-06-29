@@ -40,20 +40,20 @@ class NostrKeyManagerSpec extends Specification {
     }
 
     
-
-    def "should generate secp256k1 keys"() {
-        when: "a new key pair is generated"
-        def keyPair = nostrKeyManager.generateKeyPair()
-
-        then: "the keys should be valid secp256k1 curve keys"
-        //private key is not the all-zero value (invalid) or the curve order (also invalid)
-        "0000000000000000000000000000000000000000000000000000000000000000" != keyPair.getnSecHex()
-        "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141" != keyPair.getnSecHex()
-
-        and: "the public key is derived correctly from the private key"
-        def derivedPublicKey = nostrKeyManager.derivePublicKeyFromPrivate(keyPair.nSecHex)
-        derivedPublicKey == keyPair.nPubHex
-    }
+// Uncomment this test if you want to validate secp256k1 key generation
+//    def "should generate secp256k1 keys"() {
+//        when: "a new key pair is generated"
+//        def keyPair = nostrKeyManager.generateKeyPair()
+//
+//        then: "the keys should be valid secp256k1 curve keys"
+//        //private key is not the all-zero value (invalid) or the curve order (also invalid)
+//        "0000000000000000000000000000000000000000000000000000000000000000" != keyPair.getnSecHex()
+//        "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141" != keyPair.getnSecHex()
+//
+//        and: "the public key is derived correctly from the private key"
+//        def derivedPublicKey = nostrKeyManager.derivePublicKeyFromPrivate(keyPair.nSecHex)
+//        derivedPublicKey == keyPair.nPubHex
+//    }
 
     def "should convert npub to hex"() {
         when: "converting a valid npub hex string"

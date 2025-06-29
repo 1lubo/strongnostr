@@ -82,6 +82,10 @@ public class Exercise {
         this.equipment = equipment;
     }
 
+    public void setCreatedByUserId(String userNPub) {
+        this.createdByUserId = userNPub;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (object == null || getClass() != object.getClass()) return false;

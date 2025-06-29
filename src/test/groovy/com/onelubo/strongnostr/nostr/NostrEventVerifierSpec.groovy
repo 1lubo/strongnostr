@@ -22,9 +22,10 @@ class NostrEventVerifierSpec extends Specification {
         def nostrKeyPair = nostrKeyManager.generateKeyPair()
         def npub = nostrKeyPair.getnPub()
         def nSecHex = nostrKeyPair.getnSecHex()
-        def challenge = NostrAuthenticationService.CHALLENGE_PREFIX + UUID.randomUUID()
+        def id = UUID.randomUUID().toString()
+        def challenge = NostrAuthenticationService.CHALLENGE_PREFIX + id
         long timestamp = Instant.now().getEpochSecond()
-        def challengeRequest = new NostrAuthChallenge(challenge, timestamp)
+        def challengeRequest = new NostrAuthChallenge(id, challenge, timestamp)
         def event = NostrUtils.createSignedNostrEvent(npub, nSecHex, challengeRequest.getChallenge())
 
         when: "Verifying the event"
@@ -39,9 +40,10 @@ class NostrEventVerifierSpec extends Specification {
         def nostrKeyPair = nostrKeyManager.generateKeyPair()
         def npub = nostrKeyPair.getnPub()
         def nSecHex = nostrKeyPair.getnSecHex()
-        def challenge = NostrAuthenticationService.CHALLENGE_PREFIX + UUID.randomUUID()
+        def id = UUID.randomUUID().toString()
+        def challenge = NostrAuthenticationService.CHALLENGE_PREFIX + id
         long timestamp = Instant.now().getEpochSecond()
-        def challengeRequest = new NostrAuthChallenge(challenge, timestamp)
+        def challengeRequest = new NostrAuthChallenge(id, challenge, timestamp)
         def event = NostrUtils.createSignedNostrEvent(npub, nSecHex, challengeRequest.getChallenge())
         event.setSignature(NostrUtils.INVALID_SIGNATURE)
 

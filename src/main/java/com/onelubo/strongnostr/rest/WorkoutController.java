@@ -7,11 +7,14 @@ import com.onelubo.strongnostr.service.workout.WorkoutService;
 import jakarta.validation.Valid;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("workout")
+@RequestMapping("/api/v1/nostr/workout")
+@PreAuthorize("hasRole('ROLE_USER')")
 public class WorkoutController {
 
     private final WorkoutService workoutService;
@@ -21,7 +24,8 @@ public class WorkoutController {
     }
 
     @GetMapping("/{workoutId}")
-    public ResponseEntity<?> getWorkoutById(@PathVariable("workoutId") String workoutId) {
+    @PreAuthorize("@workoutService.isWorkoutOwner(authentication, #workoutId)")
+    public ResponseEntity<?> getWorkoutById(@PathVariable("workoutId") String workoutId, Authentication authentication) {
         try {
             Workout workout = workoutService.getWorkoutById(workoutId);
             return ResponseEntity.ok(workout);
@@ -31,12 +35,14 @@ public class WorkoutController {
     }
 
     @PostMapping()
-    public ResponseEntity<?> createWorkout(@Valid @RequestBody ExerciseSetDto workoutDto, BindingResult bindingResult) {
+    public ResponseEntity<?> createWorkout(@Valid @RequestBody ExerciseSetDto workoutDto, BindingResult bindingResult, Authentication authentication) {
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).toList());
         }
 
-        Workout createdWorkout = workoutService.createWorkout(workoutDto.getExercise(), workoutDto.getWorkoutSet());
+        String userNPub = authentication.getName();
+
+        Workout createdWorkout = workoutService.createWorkout(workoutDto.getExercise(), workoutDto.getWorkoutSet(), userNPub);
         return ResponseEntity.ok(createdWorkout);
     }
 
