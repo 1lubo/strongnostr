@@ -27,8 +27,8 @@ class BaseNostrSpec extends Specification {
     NostrKeyManager nostrKeyManager
     SchnorrSigner schnorrSigner
     JwtTokenProvider jwtTokenProvider
-    TransitionWalker.ReachedState<RunningMongodProcess> running;
-    ServerAddress serverAddress;
+    TransitionWalker.ReachedState<RunningMongodProcess> running
+    ServerAddress serverAddress
     @LocalServerPort int port
     String baseUrl
 

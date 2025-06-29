@@ -1,19 +1,31 @@
 package com.onelubo.strongnostr.nostr
 
+import com.onelubo.strongnostr.service.nostr.NostrAuthenticationService
+import com.onelubo.strongnostr.dto.nostr.NostrAuthChallenge
 import com.onelubo.strongnostr.util.NostrUtils
 import spock.lang.Specification
+
+import java.time.Instant
 
 class NostrEventVerifierSpec extends Specification {
 
     NostrEventVerifier verifier
+    NostrKeyManager nostrKeyManager
 
     def setup() {
-        verifier = new NostrEventVerifier()
+        nostrKeyManager = new NostrKeyManager()
+        verifier = new NostrEventVerifier(nostrKeyManager)
     }
 
     def "should validate a valid event"() {
         given: "A valid Nostr event with a valid NPUB and kind"
-        def event = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
+        def nostrKeyPair = nostrKeyManager.generateKeyPair()
+        def npub = nostrKeyPair.getnPub()
+        def nSecHex = nostrKeyPair.getnSecHex()
+        def challenge = NostrAuthenticationService.CHALLENGE_PREFIX + UUID.randomUUID()
+        long timestamp = Instant.now().getEpochSecond()
+        def challengeRequest = new NostrAuthChallenge(challenge, timestamp)
+        def event = NostrUtils.createSignedNostrEvent(npub, nSecHex, challengeRequest.getChallenge())
 
         when: "Verifying the event"
         def result = verifier.verifyEventSignature(event)
@@ -24,7 +36,13 @@ class NostrEventVerifierSpec extends Specification {
 
     def "should fail to validate an event with an invalid signature"() {
         given: "A valid Nostr event with an invalid signature"
-        def event = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
+        def nostrKeyPair = nostrKeyManager.generateKeyPair()
+        def npub = nostrKeyPair.getnPub()
+        def nSecHex = nostrKeyPair.getnSecHex()
+        def challenge = NostrAuthenticationService.CHALLENGE_PREFIX + UUID.randomUUID()
+        long timestamp = Instant.now().getEpochSecond()
+        def challengeRequest = new NostrAuthChallenge(challenge, timestamp)
+        def event = NostrUtils.createSignedNostrEvent(npub, nSecHex, challengeRequest.getChallenge())
         event.setSignature(NostrUtils.INVALID_SIGNATURE)
 
         when: "Verifying the event"

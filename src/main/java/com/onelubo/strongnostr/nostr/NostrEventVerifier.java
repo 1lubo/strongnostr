@@ -143,42 +143,6 @@ public class NostrEventVerifier {
         }
     }
 
-    private boolean verifySchnorrSignatureFromMessage(byte[] message, BigInteger r, BigInteger s, BigInteger pubX) {
-        try {
-            ECPoint publicKeyPoint = reconstructPublicKeyPoint(pubX);
-            if (publicKeyPoint == null) {
-                return false;
-            }
-
-            BigInteger e = calculateChallengeFromMessage(r, pubX, message);
-
-            ECPoint sG = domainParameters.getG().multiply(s).normalize();
-
-            for (byte yPrefix : new byte[]{0x02, 0x03}) {
-                try {
-                    byte[] compressedPoint = concatenateBytes(new byte[]{yPrefix}, bigIntegerToBytes32(r));
-                    ECPoint rPoint = domainParameters.getCurve().decodePoint(compressedPoint).normalize();
-
-                    ECPoint eP = publicKeyPoint.multiply(e).normalize();
-                    ECPoint sum = rPoint.add(eP).normalize();
-
-                    if (sG.getAffineXCoord().toBigInteger().equals(sum.getAffineXCoord().toBigInteger())) {
-                        return true;
-                    }
-                } catch (Exception ex) {
-                    logger.debug("  Failed with Y prefix 0x{}: {}", String.format("%02x", yPrefix), ex.getMessage());
-                }
-            }
-
-            logger.debug("❌ BIP340 VERIFICATION FAILED\nNo R point Y coordinate produced matching X coordinates");
-            return false;
-
-        } catch (Exception e) {
-            logger.error("Message verification error: {}", e.getMessage());
-            return false;
-        }
-    }
-
     /**
      * Also update the hash verification method to use the same logic
      */

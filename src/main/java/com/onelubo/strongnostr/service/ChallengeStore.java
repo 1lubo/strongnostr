@@ -9,7 +9,7 @@ public interface ChallengeStore {
     default void cleanupExpired() {}
     default void shutdown() {}
 
-    public record StoredChallenge(
+    record StoredChallenge(
             String challenge,
             long expiresAt,
             boolean used

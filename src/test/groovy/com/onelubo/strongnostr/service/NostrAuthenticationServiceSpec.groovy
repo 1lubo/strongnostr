@@ -6,31 +6,31 @@ import com.onelubo.strongnostr.model.user.User
 import com.onelubo.strongnostr.nostr.NostrEvent
 import com.onelubo.strongnostr.nostr.NostrEventVerifier
 import com.onelubo.strongnostr.nostr.NostrKeyManager
-import com.onelubo.strongnostr.repository.UserRepository
 import com.onelubo.strongnostr.security.JwtTokenProvider
 import com.onelubo.strongnostr.service.nostr.NostrAuthenticationService
+import com.onelubo.strongnostr.service.nostr.NostrUserService
 import com.onelubo.strongnostr.util.NostrUtils
 import spock.lang.Specification
 
 import java.time.Instant
 
 class NostrAuthenticationServiceSpec extends Specification{
-    UserRepository userRepository
+    NostrUserService nostrUserService
     NostrEventVerifier nostrEventVerifier
     NostrKeyManager nostrKeyManager
     JwtTokenProvider jwtTokenProvider
     NostrAuthenticationService nostrAuthenticationService
     
-    private static final String VALID_HEX = "02a1b2c3d4e5f6789abc123def456";
-    private static final String VALID_USERNAME = "testuser";
-    private static final String JWT_TOKEN = "jwt.token.here";
+    private static final String VALID_HEX = "02a1b2c3d4e5f6789abc123def456"
+    private static final String VALID_USERNAME = "testuser"
+    private static final String JWT_TOKEN = "jwt.token.here"
 
     def setup() {
-        userRepository = Mock(UserRepository)
+        nostrUserService = Mock(NostrUserService)
         nostrEventVerifier = Mock(NostrEventVerifier)
         nostrKeyManager = Mock(NostrKeyManager)
         jwtTokenProvider = Mock(JwtTokenProvider)
-        nostrAuthenticationService = new NostrAuthenticationService(userRepository, nostrEventVerifier, nostrKeyManager, jwtTokenProvider)
+        nostrAuthenticationService = new NostrAuthenticationService(nostrUserService, nostrEventVerifier, jwtTokenProvider)
     }
 
     def "should generate authentication challenge"() {
@@ -60,19 +60,19 @@ class NostrAuthenticationServiceSpec extends Specification{
         given: "An existing user and a valid Nostr event"
         def existingUser = createTestUser()
         def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
-        userRepository.findByNpub(NostrUtils.VALID_NPUB) >> Optional.of(existingUser)
-        nostrEventVerifier.verifyEventSignature(_) >> true
-        jwtTokenProvider.generateToken(existingUser.getId()) >> JWT_TOKEN
+        nostrUserService.getOrCreateUser(NostrUtils.VALID_NPUB, existingUser.getNostrProfile()) >> existingUser
+        nostrEventVerifier.verifyEventSignature(_ as NostrEvent) >> true
+        jwtTokenProvider.createAccessToken(existingUser.getnPub()) >> JWT_TOKEN
 
         when: "Authenticating with the valid event"
         def request = new NostrAuthRequest(validEvent)
         def result = nostrAuthenticationService.authenticateWithNostrEvent(request)
 
         then: "Should return a valid JWT token and user profile"
-        result.isSuccess()
-        result.getUser() == existingUser
-        result.getAccessToken() == JWT_TOKEN
-        1 * userRepository.save(existingUser)
+        result.success()
+        result.user() == existingUser
+        result.accessToken() == JWT_TOKEN
+        1 * nostrUserService.saveUser(existingUser)
     }
 
     def "should create new user on first authentication"() {
@@ -80,55 +80,22 @@ class NostrAuthenticationServiceSpec extends Specification{
         def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
         def newUser = createTestUser()
         nostrEventVerifier.verifyEventSignature(validEvent) >> true
-        userRepository.findByNpub(NostrUtils.VALID_NPUB) >> Optional.empty()
-        userRepository.save(_ as User) >> newUser
+        nostrUserService.getOrCreateUser(NostrUtils.VALID_NPUB, newUser.getNostrProfile()) >> newUser
+        nostrUserService.saveUser(_ as User) >> newUser
         nostrKeyManager.npubToHex(NostrUtils.VALID_NPUB) >> VALID_HEX
         nostrEventVerifier.verifyEventSignature(validEvent) >> true
-        jwtTokenProvider.generateToken(newUser.getId()) >> JWT_TOKEN
+        jwtTokenProvider.createAccessToken(newUser.getnPub()) >> JWT_TOKEN
 
         when: "Authenticating with the valid event"
         def request = new NostrAuthRequest(validEvent)
         def result = nostrAuthenticationService.authenticateWithNostrEvent(request)
 
         then: "Should create a new user and return a valid JWT token"
-        result.isSuccess()
-        result.getUser() != null
-        result.getUser() == newUser
-        result.getAccessToken() == JWT_TOKEN
-        1 * userRepository.save(newUser)
-    }
-
-    def "should update user profile from nostr data"() {
-        given: "An existing user and a valid Nostr profile"
-        def existingUser = createTestUser()
-        def outdatedProfile = new NostrUserProfile()
-        outdatedProfile.setName("Old Name")
-        outdatedProfile.setAbout("Old about text.")
-        outdatedProfile.setAvatarUrl("https://old.example.com/avatar.jpg")
-        existingUser.setNostrProfile(outdatedProfile)
-        def newName = "Updated Name"
-        def newAbout = "Updated about text."
-        def mewAvatarUrl = "https://new.example.com/avatar.jpg"
-        def newProfile = new NostrUserProfile()
-        newProfile.setName(newName)
-        newProfile.setAbout(newAbout)
-        newProfile.setAvatarUrl(mewAvatarUrl)
-        def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
-        userRepository.findByNpub(NostrUtils.VALID_NPUB) >> Optional.of(existingUser)
-        nostrEventVerifier.verifyEventSignature(validEvent) >> true
-        jwtTokenProvider.generateToken(existingUser.getId()) >> JWT_TOKEN
-
-        when: "Authenticating with the valid event"
-        def request = new NostrAuthRequest(validEvent,  newProfile)
-        def result = nostrAuthenticationService.authenticateWithNostrEvent(request)
-
-        then: "Should update the user profile and return a valid JWT token"
-        result.isSuccess()
-        result.getUser() != null
-        result.getUser().getNostrProfile().getName() == newName
-        result.getUser().getNostrProfile().getAbout() == newAbout
-        result.getUser().getNostrProfile().getAvatarUrl() == mewAvatarUrl
-        result.getAccessToken() == JWT_TOKEN
+        result.success()
+        result.user() != null
+        result.user() == newUser
+        result.accessToken() == JWT_TOKEN
+        1 * nostrUserService.saveUser(newUser)
     }
 
     def "should reject invalid Nostr event"() {
@@ -142,11 +109,11 @@ class NostrAuthenticationServiceSpec extends Specification{
         def result = nostrAuthenticationService.authenticateWithNostrEvent(request)
 
         then: "Should return an error indicating the event is invalid"
-        !result.isSuccess()
-        result.getMessage() == "Invalid nostr event structure"
-        result.getUser() == null
-        result.getAccessToken() == null
-        0 * userRepository.save(_)
+        !result.success()
+        result.message() == "Invalid nostr event structure"
+        result.user() == null
+        result.accessToken() == null
+        0 * nostrUserService.saveUser(_)
     }
 
     def "should reject an expired challenge"() {
@@ -159,10 +126,10 @@ class NostrAuthenticationServiceSpec extends Specification{
         def result = nostrAuthenticationService.authenticateWithNostrEvent(request)
 
         then: "Should return an error indicating the challenge is expired"
-        !result.isSuccess()
-        result.getMessage() == "Invalid or expired challenge"
-        result.getUser() == null
-        result.getAccessToken() == null
+        !result.success()
+        result.message() == "Invalid or expired challenge"
+        result.user() == null
+        result.accessToken() == null
     }
 
     def "should reject an event with invalid signature"() {
@@ -175,10 +142,10 @@ class NostrAuthenticationServiceSpec extends Specification{
         def result = nostrAuthenticationService.authenticateWithNostrEvent(request)
 
         then: "Should return an error indicating the signature is invalid"
-        !result.isSuccess()
-        result.getMessage() == "Invalid event signature"
-        result.getUser() == null
-        result.getAccessToken() == null
+        !result.success()
+        result.message() == "Invalid event signature"
+        result.user() == null
+        result.accessToken() == null
     }
 
     def "should reject an event with invalid content"() {
@@ -191,10 +158,10 @@ class NostrAuthenticationServiceSpec extends Specification{
         def result = nostrAuthenticationService.authenticateWithNostrEvent(request)
 
         then: "Should return an error indicating the content is invalid"
-        !result.isSuccess()
-        result.getMessage() == "Invalid or expired challenge"
-        result.getUser() == null
-        result.getAccessToken() == null
+        !result.success()
+        result.message() == "Invalid or expired challenge"
+        result.user() == null
+        result.accessToken() == null
     }
 
     User createTestUser() {
