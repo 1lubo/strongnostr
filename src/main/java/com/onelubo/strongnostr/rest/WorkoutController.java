@@ -12,6 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/nostr/workout")
 @PreAuthorize("hasRole('ROLE_USER')")
@@ -58,5 +60,13 @@ public class WorkoutController {
         } catch (WorkoutNotFoundException e) {
             return ResponseEntity.status(404).body("Workout with ID " + workoutId + " not found");
         }
+    }
+
+    @GetMapping()
+    public ResponseEntity<List<Workout>> getWorkouts(Authentication authentication, @RequestParam(defaultValue = "0") int page,
+                                                     @RequestParam(defaultValue = "10") int size){
+        String userNPub = authentication.getName();
+        List<Workout> workouts = workoutService.getWorkoutsByUser(userNPub, page, size);
+        return ResponseEntity.ok(workouts);
     }
 }

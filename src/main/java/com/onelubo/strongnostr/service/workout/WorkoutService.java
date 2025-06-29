@@ -6,6 +6,8 @@ import com.onelubo.strongnostr.model.workout.Workout;
 import com.onelubo.strongnostr.model.workout.WorkoutExercise;
 import com.onelubo.strongnostr.model.workout.WorkoutSet;
 import com.onelubo.strongnostr.repository.WorkoutRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,7 +29,7 @@ public class WorkoutService {
         Objects.requireNonNull(set);
         Objects.requireNonNull(userNPub);
 
-        Workout workout = new Workout();
+        Workout workout = new Workout(userNPub);
         exercise.setCreatedByUserId(userNPub);
         Exercise existingExercise = exerciseService.findOrCreateExercise(exercise);
         WorkoutExercise workoutExercise = new WorkoutExercise(existingExercise.getId(),
@@ -67,5 +69,11 @@ public class WorkoutService {
     public Workout getWorkoutById(String workoutID) {
         return workoutRepository.findById(workoutID)
                 .orElseThrow(() -> new WorkoutNotFoundException(workoutID));
+    }
+
+    public List<Workout> getWorkoutsByUser(String userNPub, int page, int size) {
+        Objects.requireNonNull(userNPub);
+        Pageable pageable = PageRequest.of(page, size);
+        return workoutRepository.findByUserNPub(userNPub, pageable);
     }
 }
