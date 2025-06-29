@@ -13,7 +13,7 @@ public class NostrEvent {
     private String id;
 
     @NotBlank(message = "Public key is required")
-    private String pubkey;
+    private String npub;
 
     @NotNull(message = "Event kind is required")
     private Integer kind;
@@ -42,12 +42,12 @@ public class NostrEvent {
         this.id = id;
     }
 
-    public String getPubkey() {
-        return pubkey;
+    public String getnPub() {
+        return npub;
     }
 
-    public void setPubkey(String pubkey) {
-        this.pubkey = pubkey;
+    public void setnPub(String npub) {
+        this.npub = npub;
     }
 
     public int getKind() {
@@ -98,10 +98,4 @@ public class NostrEvent {
         return kind != null && kind == 22242; // NIP-46 authentication event kind
     }
 
-    public long getAgeSeconds() {
-        if (createdAt == null) {
-            return 0;
-        }
-        return (System.currentTimeMillis() / 1000) - createdAt;
-    }
 }

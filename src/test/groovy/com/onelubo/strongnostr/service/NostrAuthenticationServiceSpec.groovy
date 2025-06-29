@@ -60,7 +60,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         given: "An existing user and a valid Nostr event"
         def existingUser = createTestUser()
         def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
-        userRepository.findByNostrPubKey(NostrUtils.VALID_NPUB) >> Optional.of(existingUser)
+        userRepository.findByNpub(NostrUtils.VALID_NPUB) >> Optional.of(existingUser)
         nostrEventVerifier.verifyEventSignature(_) >> true
         jwtTokenProvider.generateToken(existingUser.getId()) >> JWT_TOKEN
 
@@ -71,7 +71,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         then: "Should return a valid JWT token and user profile"
         result.isSuccess()
         result.getUser() == existingUser
-        result.getJwtToken() == JWT_TOKEN
+        result.getAccessToken() == JWT_TOKEN
         1 * userRepository.save(existingUser)
     }
 
@@ -80,7 +80,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
         def newUser = createTestUser()
         nostrEventVerifier.verifyEventSignature(validEvent) >> true
-        userRepository.findByNostrPubKey(NostrUtils.VALID_NPUB) >> Optional.empty()
+        userRepository.findByNpub(NostrUtils.VALID_NPUB) >> Optional.empty()
         userRepository.save(_ as User) >> newUser
         nostrKeyManager.npubToHex(NostrUtils.VALID_NPUB) >> VALID_HEX
         nostrEventVerifier.verifyEventSignature(validEvent) >> true
@@ -94,7 +94,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         result.isSuccess()
         result.getUser() != null
         result.getUser() == newUser
-        result.getJwtToken() == JWT_TOKEN
+        result.getAccessToken() == JWT_TOKEN
         1 * userRepository.save(newUser)
     }
 
@@ -114,7 +114,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         newProfile.setAbout(newAbout)
         newProfile.setAvatarUrl(mewAvatarUrl)
         def validEvent = NostrUtils.createValidAuthEvent(NostrUtils.VALID_NPUB, NostrUtils.VALID_EVENT_KIND)
-        userRepository.findByNostrPubKey(NostrUtils.VALID_NPUB) >> Optional.of(existingUser)
+        userRepository.findByNpub(NostrUtils.VALID_NPUB) >> Optional.of(existingUser)
         nostrEventVerifier.verifyEventSignature(validEvent) >> true
         jwtTokenProvider.generateToken(existingUser.getId()) >> JWT_TOKEN
 
@@ -128,7 +128,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         result.getUser().getNostrProfile().getName() == newName
         result.getUser().getNostrProfile().getAbout() == newAbout
         result.getUser().getNostrProfile().getAvatarUrl() == mewAvatarUrl
-        result.getJwtToken() == JWT_TOKEN
+        result.getAccessToken() == JWT_TOKEN
     }
 
     def "should reject invalid Nostr event"() {
@@ -145,7 +145,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         !result.isSuccess()
         result.getMessage() == "Invalid nostr event structure"
         result.getUser() == null
-        result.getJwtToken() == null
+        result.getAccessToken() == null
         0 * userRepository.save(_)
     }
 
@@ -162,7 +162,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         !result.isSuccess()
         result.getMessage() == "Invalid or expired challenge"
         result.getUser() == null
-        result.getJwtToken() == null
+        result.getAccessToken() == null
     }
 
     def "should reject an event with invalid signature"() {
@@ -178,7 +178,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         !result.isSuccess()
         result.getMessage() == "Invalid event signature"
         result.getUser() == null
-        result.getJwtToken() == null
+        result.getAccessToken() == null
     }
 
     def "should reject an event with invalid content"() {
@@ -194,7 +194,7 @@ class NostrAuthenticationServiceSpec extends Specification{
         !result.isSuccess()
         result.getMessage() == "Invalid or expired challenge"
         result.getUser() == null
-        result.getJwtToken() == null
+        result.getAccessToken() == null
     }
 
     User createTestUser() {

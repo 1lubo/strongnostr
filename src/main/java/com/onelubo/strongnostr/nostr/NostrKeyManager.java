@@ -10,6 +10,8 @@ import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
@@ -19,6 +21,8 @@ import java.util.HexFormat;
 
 @Component
 public class NostrKeyManager {
+
+    Logger logger = LoggerFactory.getLogger(NostrKeyManager.class);
 
     private final ECParameterSpec secp256k1Spec;
     private final ECDomainParameters domainParameters;
@@ -44,28 +48,22 @@ public class NostrKeyManager {
      */
     public NostrKeyPair generateKeyPair() {
         try {
-            // Generate secp256k1 key pair
             ECKeyPairGenerator generator = new ECKeyPairGenerator();
 
-            // Use proper ECKeyGenerationParameters for secp256k1
             ECKeyGenerationParameters keyGenParams = new ECKeyGenerationParameters(domainParameters, secureRandom);
 
             generator.init(keyGenParams);
             AsymmetricCipherKeyPair keyPair = generator.generateKeyPair();
 
-            // Extract private key
             ECPrivateKeyParameters privateKeyParams = (ECPrivateKeyParameters) keyPair.getPrivate();
             BigInteger privateKeyInt = privateKeyParams.getD();
             String privateKeyHex = String.format("%064x", privateKeyInt);
 
-            // Extract public key - Nostr uses 32-byte X coordinate only
             ECPublicKeyParameters publicKeyParams = (ECPublicKeyParameters) keyPair.getPublic();
             ECPoint publicKeyPoint = publicKeyParams.getQ();
 
-            // Use consistent extraction method
             String publicKeyHex = extractXCoordinateHex(publicKeyPoint);
 
-            // Convert to Nostr formats
             String nostrPublicKey = hexToNpub(publicKeyHex);
             String nostrPrivateKey = hexToNsec(privateKeyHex);
 
@@ -83,20 +81,28 @@ public class NostrKeyManager {
         validateHexKey(privateKeyHex, 64, "Private key");
 
         try {
-            // Convert hex to BigInteger
             BigInteger privateKeyInt = new BigInteger(privateKeyHex, 16);
 
-            // Validate private key is in valid range (1 to n-1)
             BigInteger n = domainParameters.getN();
             if (privateKeyInt.compareTo(BigInteger.ONE) < 0 || privateKeyInt.compareTo(n) >= 0) {
                 throw new IllegalArgumentException("Private key out of valid range");
             }
 
-            // Compute public key: Q = d * G (where d is private key, G is generator)
             ECPoint publicKeyPoint = domainParameters.getG().multiply(privateKeyInt);
 
-            // Use consistent extraction method
-            return extractXCoordinateHex(publicKeyPoint);
+            logger.debug("DEBUG - Original public key point:\n  X: {}\n  Y: {}\n  Y is odd: {}", publicKeyPoint.normalize().getAffineXCoord().toBigInteger().toString(16), publicKeyPoint.normalize().getAffineYCoord().toBigInteger().toString(16), publicKeyPoint.normalize().getAffineYCoord().toBigInteger().testBit(0));
+
+            String result = extractXCoordinateHex(publicKeyPoint);
+
+            BigInteger resultX = new BigInteger(result, 16);
+            byte[] evenPoint = new byte[33];
+            evenPoint[0] = 0x02;
+            System.arraycopy(resultX.toByteArray(), 0, evenPoint, 33 - resultX.toByteArray().length, resultX.toByteArray().length);
+            ECPoint reconstructed = domainParameters.getCurve().decodePoint(evenPoint).normalize();
+
+            logger.debug("DEBUG - Reconstructed public key point:\n  X: {}\n  Y: {}\n  Y is odd: {}", reconstructed.getAffineXCoord().toBigInteger().toString(16), reconstructed.getAffineYCoord().toBigInteger().toString(16), reconstructed.getAffineYCoord().toBigInteger().testBit(0));
+
+            return result;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to derive public key", e);
@@ -214,10 +220,8 @@ public class NostrKeyManager {
         }
 
         try {
-            // Convert 8-bit bytes to 5-bit groups for Bech32
             int[] convertedData = convertBits(data, 8, 5, true);
 
-            // Encode using Bech32
             return Bech32.encode(hrp, convertedData);
 
         } catch (Exception e) {
@@ -236,7 +240,6 @@ public class NostrKeyManager {
         try {
             Bech32.Bech32Data decoded = Bech32.decode(bech32);
 
-            // Convert 5-bit groups back to 8-bit bytes
             int[] convertedData = convertBits(decoded.data(), 5, 8, false);
             byte[] dataBytes = new byte[convertedData.length];
             for (int i = 0; i < convertedData.length; i++) {
@@ -333,17 +336,20 @@ public class NostrKeyManager {
      * Extract 32-byte X coordinate from EC point (consistent method)
      */
     private String extractXCoordinateHex(ECPoint point) {
-        // Extract X coordinate as 32-byte array (Nostr standard)
         ECPoint normalizedPoint = point.normalize();
+
+        BigInteger y = normalizedPoint.getAffineYCoord().toBigInteger();
+        if (y.testBit(0)) {
+            normalizedPoint = normalizedPoint.negate().normalize();
+        }
+
         byte[] xCoordBytes = normalizedPoint.getAffineXCoord().toBigInteger().toByteArray();
 
-        // Ensure exactly 32 bytes (remove leading zero if present)
         if (xCoordBytes.length == 33 && xCoordBytes[0] == 0) {
             byte[] temp = new byte[32];
             System.arraycopy(xCoordBytes, 1, temp, 0, 32);
             xCoordBytes = temp;
         } else if (xCoordBytes.length < 32) {
-            // Pad with leading zeros if necessary
             byte[] temp = new byte[32];
             System.arraycopy(xCoordBytes, 0, temp, 32 - xCoordBytes.length, xCoordBytes.length);
             xCoordBytes = temp;
@@ -352,51 +358,37 @@ public class NostrKeyManager {
         return HexFormat.of().formatHex(xCoordBytes);
     }
 
-    private byte[] hexStringToByteArray(String hex) {
-        int len = hex.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i+1), 16));
-        }
-        return data;
-    }
-
-    private String byteArrayToHexString(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-    }
-
     public static class NostrKeyPair {
-        private final String privateKey;
-        private final String publicKey;
-        private final String publicKeyHex;
-        private final String privateKeyHex;
+        private final String nsec;
+        private final String npub;
+        private final String nPubHex;
+        private final String nSecHex;
 
 
-        public NostrKeyPair(String publicKey, String privateKey, String publicKeyHex, String privateKeyHex) {
-            this.privateKey = privateKey;
-            this.publicKey = publicKey;
-            this.publicKeyHex = publicKeyHex;
-            this.privateKeyHex = privateKeyHex;
+        public NostrKeyPair(String npub, String nsec, String nPubHex, String nSecHex) {
+            this.nsec = nsec;
+            this.npub = npub;
+            this.nPubHex = nPubHex;
+            this.nSecHex = nSecHex;
         }
 
-        public String getPublicKeyHex() {
-            return publicKeyHex;
+        public String getnPub() {
+            return npub;
         }
 
-        public String getPrivateKeyHex() {
-            return privateKeyHex;
+        public String getnPubHex() {
+            return nPubHex;
+        }
+
+        public String getnSecHex() {
+            return nSecHex;
         }
 
         @Override
         public String toString() {
             return "NostrKeyPair{" +
-                    "publicKey='" + publicKey.substring(0, 12) + "...'" +
-                    ", publicKeyHex='" + publicKeyHex.substring(0, 8) + "...'" +
+                    "publicKey='" + npub.substring(0, 12) + "...'" +
+                    ", publicKeyHex='" + nPubHex.substring(0, 8) + "...'" +
                     '}';
         }
     }

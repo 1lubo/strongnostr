@@ -7,9 +7,7 @@ import java.util.Optional;
 
 public interface UserRepository extends MongoRepository<User, String> {
 
-    Optional<User> findByNostrPubKey(String nostrPublicKey);
-
-    boolean existsByNostrPublicKey(String nostrPublicKey);
+    Optional<User> findByNpub(String nostrPublicKey);
 
     boolean existsByUsername(String username);
 }

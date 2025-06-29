@@ -3,41 +3,37 @@ package com.onelubo.strongnostr.service.nostr;
 import com.onelubo.strongnostr.dto.nostr.NostrAuthChallenge;
 import com.onelubo.strongnostr.dto.nostr.NostrAuthRequest;
 import com.onelubo.strongnostr.dto.nostr.NostrAuthResult;
-import com.onelubo.strongnostr.dto.nostr.NostrUserProfile;
 import com.onelubo.strongnostr.model.user.User;
 import com.onelubo.strongnostr.nostr.NostrEvent;
 import com.onelubo.strongnostr.nostr.NostrEventVerifier;
-import com.onelubo.strongnostr.nostr.NostrKeyManager;
-import com.onelubo.strongnostr.repository.UserRepository;
 import com.onelubo.strongnostr.security.JwtTokenProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @Transactional
 public class NostrAuthenticationService {
-    private final UserRepository userRepository;
+
+    private final NostrUserService nostrUserService;
     private final NostrEventVerifier nostrEventVerifier;
-    private final NostrKeyManager nostrKeyManager;
     private final JwtTokenProvider jwtTokenProvider;
 
     private static final long CHALLENGE_VALIDITY_SECONDS = 300;
     private static final String CHALLENGE_PREFIX = "Strong Nostr authentication challenge: ";
-    public static final String BASE_USER_NAME = "nostr_user_";
 
-    public NostrAuthenticationService(UserRepository userRepository, NostrEventVerifier nostrEventVerifier, NostrKeyManager nostrKeyManager, JwtTokenProvider jwtTokenProvider) {
-        this.userRepository = userRepository;
+
+    public NostrAuthenticationService(NostrUserService nostrUserService, NostrEventVerifier nostrEventVerifier,
+                                      JwtTokenProvider jwtTokenProvider) {
+        this.nostrUserService = nostrUserService;
         this.nostrEventVerifier = nostrEventVerifier;
-        this.nostrKeyManager = nostrKeyManager;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
     public NostrAuthChallenge generateAuthChallenge() {
-        String challenge = UUID.randomUUID().toString();
+        String challenge = CHALLENGE_PREFIX + UUID.randomUUID();
         long timestamp = Instant.now().getEpochSecond();
         return new NostrAuthChallenge(challenge, timestamp);
     }
@@ -58,48 +54,18 @@ public class NostrAuthenticationService {
                 return NostrAuthResult.failure("Invalid event signature");
             }
 
-            String nostrPubKey = event.getPubkey();
-            User user = findOrCreateUser(nostrPubKey, nostrAuthRequest.getUserProfile());
+            String nostrPubKey = event.getnPub();
+            User user = nostrUserService.getOrCreateUser(nostrPubKey, nostrAuthRequest.getUserProfile());
 
-            updateUserFromProfile(user, nostrAuthRequest.getUserProfile());
             user.markAsVerified();
-            userRepository.save(user);
+            nostrUserService.saveUser(user);
 
-            String jwtToken = jwtTokenProvider.generateToken(user.getId());
+            String accessToken = jwtTokenProvider.createAccessToken(user.getnPub());
+            String refreshToken = jwtTokenProvider.createRefreshToken(user.getnPub());
 
-            return NostrAuthResult.success(user, jwtToken);
+            return NostrAuthResult.success(user, accessToken, refreshToken);
         } catch (Exception e) {
             return NostrAuthResult.failure(e.getMessage());
-        }
-    }
-
-    private void updateUserFromProfile(User user, NostrUserProfile profileData) {
-        if (profileData == null) return;
-
-        NostrUserProfile userNostrProfile = user.getNostrProfile();
-        if (userNostrProfile == null) {
-            userNostrProfile = new NostrUserProfile();
-            user.setNostrProfile(userNostrProfile);
-        }
-
-        if (profileData.getName() != null) {
-            userNostrProfile.setName(profileData.getName());
-        }
-
-        if (profileData.getAbout() != null) {
-            userNostrProfile.setAbout(profileData.getAbout());
-        }
-
-        if (profileData.getAvatarUrl() != null) {
-            userNostrProfile.setAvatarUrl(profileData.getAvatarUrl());
-        }
-
-        if (profileData.getNip05() != null) {
-            userNostrProfile.setNip05(profileData.getNip05());
-        }
-
-        if (profileData.getLud16() != null) {
-            userNostrProfile.setLud16(profileData.getLud16());
         }
     }
 
@@ -118,57 +84,9 @@ public class NostrAuthenticationService {
     private boolean isValidNostrAuthEvent(NostrEvent event) {
         return event != null &&
                 event.getKind() == 22242 && // NIP-46 authentication event kind
-                event.getPubkey() != null && !event.getPubkey().trim().isEmpty() &&
+                event.getnPub() != null && !event.getnPub().trim().isEmpty() &&
                 event.getContent() != null && !event.getContent().trim().isEmpty() &&
                 event.getSignature() != null && !event.getSignature().trim().isEmpty() &&
                 event.getCreatedAt() > 0;
-    }
-
-    private User findOrCreateUser(String pubkey, NostrUserProfile nostrUserProfile) {
-        Optional<User> existingUser = userRepository.findByNostrPubKey(pubkey);
-
-        if (existingUser.isPresent()) {
-            return existingUser.get();
-        }
-
-        String hexKey = nostrKeyManager.npubToHex(pubkey);
-        String userName = generateUniqueUsername(nostrUserProfile);
-
-        User newUser = new User(userName, pubkey, hexKey);
-        newUser.markAsVerified();
-
-        if (nostrUserProfile != null) {
-            updateUserFromProfile(newUser, nostrUserProfile);
-        }
-
-        return  userRepository.save(newUser);
-    }
-
-    private String generateUniqueUsername(NostrUserProfile nostrUserProfile) {
-        String baseName;
-
-        if (nostrUserProfile != null && nostrUserProfile.getName() != null &&
-                !nostrUserProfile.getName().trim().isEmpty()) {
-            baseName = generateCleanUserName(nostrUserProfile.getName());
-        } else {
-            baseName = BASE_USER_NAME;
-        }
-
-        String userName = baseName;
-        int counter = 1;
-
-        while (userRepository.existsByUsername(userName)) {
-            userName = baseName + counter++;
-        }
-
-        return  userName;
-    }
-
-    private String generateCleanUserName(String userName) {
-        return userName.toLowerCase()
-                .replaceAll("[^a-z0-9]", "_")
-                .replaceAll("[_{2,}]", "_")
-                .replaceAll("^_|_$", "")
-                .substring(0, Math.min(userName.length(), 32));
     }
 }

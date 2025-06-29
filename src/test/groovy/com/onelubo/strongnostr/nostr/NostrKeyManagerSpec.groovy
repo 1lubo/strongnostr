@@ -17,18 +17,18 @@ class NostrKeyManagerSpec extends Specification {
 
         then: "the key pair should be valid"
         keyPair != null
-        keyPair.publicKey != null
-        keyPair.publicKey.length() > 0
-        keyPair.publicKey.startsWith("npub1")
-        keyPair.privateKey != null
-        keyPair.privateKey.length() > 0
-        keyPair.privateKey.startsWith("nsec1")
-        NostrUtils.isValidHex(keyPair.publicKeyHex)
-        NostrUtils.isValidHex(keyPair.privateKeyHex)
-        keyPair.publicKey.length() == 63
-        keyPair.privateKey.length() == 63
-        keyPair.publicKeyHex.length() == 64
-        keyPair.privateKeyHex.length() == 64
+        keyPair.npub != null
+        keyPair.npub.length() > 0
+        keyPair.npub.startsWith("npub1")
+        keyPair.nsec != null
+        keyPair.nsec.length() > 0
+        keyPair.nsec.startsWith("nsec1")
+        NostrUtils.isValidHex(keyPair.nPubHex)
+        NostrUtils.isValidHex(keyPair.nSecHex)
+        keyPair.npub.length() == 63
+        keyPair.nsec.length() == 63
+        keyPair.nPubHex.length() == 64
+        keyPair.nSecHex.length() == 64
     }
 
     def "should generate unique key pairs"() {
@@ -47,12 +47,12 @@ class NostrKeyManagerSpec extends Specification {
 
         then: "the keys should be valid secp256k1 curve keys"
         //private key is not the all-zero value (invalid) or the curve order (also invalid)
-        "0000000000000000000000000000000000000000000000000000000000000000" != keyPair.getPrivateKeyHex()
-        "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141" != keyPair.getPrivateKeyHex()
+        "0000000000000000000000000000000000000000000000000000000000000000" != keyPair.getnSecHex()
+        "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141" != keyPair.getnSecHex()
 
         and: "the public key is derived correctly from the private key"
-        def derivedPublicKey = nostrKeyManager.derivePublicKeyFromPrivate(keyPair.privateKeyHex)
-        derivedPublicKey == keyPair.publicKeyHex
+        def derivedPublicKey = nostrKeyManager.derivePublicKeyFromPrivate(keyPair.nSecHex)
+        derivedPublicKey == keyPair.nPubHex
     }
 
     def "should convert npub to hex"() {

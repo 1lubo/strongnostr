@@ -6,21 +6,23 @@ public class NostrAuthResult {
     private boolean success;
     private String message;
     private User user;
-    private String jwtToken;
+    private String accessToken;
+    private String refreshToken;
 
-    private NostrAuthResult(boolean success, String message, User user, String jwtToken) {
+    private NostrAuthResult(boolean success, String message, User user, String accessToken, String refreshToken) {
         this.success = success;
         this.message = message;
         this.user = user;
-        this.jwtToken = jwtToken;
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
     }
 
-    public static NostrAuthResult success(User user, String jwtToken) {
-        return new NostrAuthResult(true, "Authentication successful", user, jwtToken);
+    public static NostrAuthResult success(User user, String accessToken, String refreshToken) {
+        return new NostrAuthResult(true, "Authentication successful", user, accessToken, refreshToken);
     }
 
     public static NostrAuthResult failure(String message) {
-        return new NostrAuthResult(false, message, null, null);
+        return new NostrAuthResult(false, message, null, null, null);
     }
 
     public boolean isSuccess() {
@@ -35,7 +37,11 @@ public class NostrAuthResult {
         return user;
     }
 
-    public String getJwtToken() {
-        return jwtToken;
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
     }
 }

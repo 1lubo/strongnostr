@@ -2,17 +2,19 @@ spring:
   application:
     name: strongnostr
 
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/strongnostr
-      auto-index-creation: true
-      field-naming-strategy: org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
+data:
+  mongodb:
+    uri: mongodb://localhost:27017/strongnostr
+    auto-index-creation: true
+    field-naming-strategy: org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
 
-  jwt:
-    secret: super-secret-key
-    expiration: 86400000
+jwt:
+  secret: super-secret-key-which-needs-to-be-long-enough-for-security
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800
+  issuer: strongnostr
 
-  crypto:
-    provider: BouncyCastle
-    curve: secp256k1
-    key-size: 256
+crypto:
+  provider: BouncyCastle
+  curve: secp256k1
+  key-size: 256

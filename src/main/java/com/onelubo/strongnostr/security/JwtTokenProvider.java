@@ -1,183 +1,150 @@
 package com.onelubo.strongnostr.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 public class JwtTokenProvider {
 
-    private final SecretKey secretKey;
-    private final long jwtExpirationInMillis;
-    public static final String ISSUER = "StrongNostr";
+    private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
-    public JwtTokenProvider(
-            @Value("${jwt.secret}") SecretKey secretKey,
-            @Value("${jwt.expiration}") long jwtExpirationInMillis) {
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
-        this.secretKey = Keys.hmacShaKeyFor(secretKey.getEncoded());
-        this.jwtExpirationInMillis = jwtExpirationInMillis;
+    @Value("${jwt.access-token-expiration}")
+    private long accessTokenExpirationInMillis;
+
+    @Value("${jwt.refresh-token-expiration}")
+    private long refreshTokenExpirationInMillis;
+
+    @Value("${jwt.issuer}")
+    public String issuer;
+
+    private SecretKey secretKey;
+
+    @PostConstruct
+    public void init() {
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String userId) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMillis);
+    /**
+     * Create access token for Nostr user
+     */
+    public String createAccessToken(String npub) {
+        return createToken(npub, accessTokenExpirationInMillis, "access");
+    }
 
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userId);
-        claims.put("tokenType", "access");
+    /**
+     * Create refresh token for Nostr user
+     */
+    public String createRefreshToken(String npub) {
+        return createToken(npub, refreshTokenExpirationInMillis, "refresh");
+    }
+
+    /**
+     * Create JWT token with specified expiry
+     */
+    private String createToken(String npub, long expiryMilliseconds, String tokenType) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + expiryMilliseconds);
 
         return Jwts.builder()
-                .claims(claims)
-                .subject(userId)
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .issuer(ISSUER)
-                .signWith(secretKey)
-                .compact();
+                   .subject(npub)
+                   .issuer(issuer)
+                   .issuedAt(now)
+                   .expiration(expiry)               // Expiry time
+                   .claim("type", tokenType)            // Token type
+                   .claim("npub", npub)                 // Explicit npub claim
+                   .signWith(secretKey)                 // Sign with secret
+                   .compact();
     }
 
-    public String generateToken(String userId, Map<String, Object> additionalClaims) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMillis);
-
-        Map<String, Object> claims = new HashMap<>(additionalClaims);
-        claims.put("userId", userId);
-        claims.put("tokenType", "access");
-
-        return Jwts.builder()
-                .claims(additionalClaims)
-                .subject(userId)
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .issuer(ISSUER)
-                .signWith(secretKey)
-                .compact();
-    }
-
-    public String generateRefreshToken(String userId) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMillis * 2); // Refresh token typically has a longer expiration
-
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userId);
-        claims.put("tokenType", "refresh");
-
-        return Jwts.builder()
-                .claims(claims)
-                .subject(userId)
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .issuer(ISSUER)
-                .signWith(secretKey)
-                .compact();
-    }
-
-    public String generateNostrToken(String userId, String nostrPubKey) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userId);
-        claims.put("nostrPubKey", nostrPubKey);
-        claims.put("tokenType", "nostr");
-
-        return generateToken(userId, claims);
-    }
-
-    public String getUserIdFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        if (claims != null) {
-            return claims.get("userId", String.class);
-        }
-        throw new IllegalArgumentException("Invalid token");
-    }
-
-    public Date getExpirationDateFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        if (claims != null) {
-            return claims.getExpiration();
-        }
-        throw new IllegalArgumentException("Invalid token");
-    }
-
-    public boolean isTokenExpired(String token) {
+    /**
+     * Extract npub from JWT token
+     */
+    public String getNpubFromToken(String token) {
         try {
-            Date expiration = getExpirationDateFromToken(token);
-            return expiration.before(new Date());
-        } catch (IllegalArgumentException e) {
-            return true; // If we can't parse the token, consider it expired
+            Claims claims = getAllClaimsFromToken(token);
+            return claims.getSubject(); // Subject is the npub
+        } catch (Exception e) {
+            logger.debug("Failed to extract npub from token: {}", e.getMessage());
+            return null;
         }
     }
 
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parser()
-                    .verifyWith(secretKey)
-                    .build()
-                    .parseSignedClaims(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            return false; // If we can't parse the token, it's invalid
-        }
-    }
-
-    public boolean validateToken(String token, String userId) {
-        try {
-            String tokenUserId = getUserIdFromToken(token);
-            return validateToken(token) && tokenUserId.equals(userId) && !isTokenExpired(token);
-        } catch (IllegalArgumentException e) {
-            return false; // If we can't parse the token, it's invalid
-        }
-    }
-
-    public boolean isRefreshToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        if (claims != null) {
-            String tokenType = claims.get("tokenType", String.class);
-            return "refresh".equals(tokenType);
-        }
-        return false;
-    }
-
-    public String refreshAccessToken(String refreshToken) {
-        if (!validateToken(refreshToken) || !isRefreshToken(refreshToken)) {
-            throw new IllegalArgumentException("Invalid refresh token");
-        }
-
-        String userId = getUserIdFromToken(refreshToken);
-        return generateToken(userId);
-    }
-
-    public String getNostrPubKeyFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        if (claims != null) {
-            return claims.get("nostrPubKey", String.class);
-        }
-        throw new IllegalArgumentException("Invalid token");
-    }
-
-    public long getTokenValiditySeconds(String token) {
-        Claims claims = getClaimsFromToken(token);
-        if (claims != null) {
-            Date expiration = claims.getExpiration();
-            long currentTime = System.currentTimeMillis();
-            return (expiration.getTime() - currentTime) / 1000; // Convert milliseconds to seconds
-        }
-        throw new IllegalArgumentException("Invalid token");
-    }
-
-    private Claims getClaimsFromToken(String token) {
+    /**
+     * Get all claims from JWT token
+     */
+    public Claims getAllClaimsFromToken(String token) {
         return Jwts.parser()
                    .verifyWith(secretKey)
                    .build()
                    .parseSignedClaims(token)
                    .getPayload();
+    }
 
+    /**
+     * Get token type (access/refresh)
+     */
+    public String getTokenType(String token) {
+        try {
+            return (String) getAllClaimsFromToken(token).get("type");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Validate JWT token
+     */
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+            return true;
+        } catch (SecurityException e) {
+            logger.debug("Invalid JWT signature: {}", e.getMessage());
+        } catch (MalformedJwtException e) {
+            logger.debug("Invalid JWT token: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            logger.debug("Expired JWT token: {}", e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            logger.debug("Unsupported JWT token: {}", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            logger.debug("JWT claims string is empty: {}", e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Refresh access token using refresh token
+     */
+    public String refreshAccessToken(String refreshToken) {
+        if (!validateToken(refreshToken)) {
+            throw new JwtException("Invalid refresh token");
+        }
+
+        if (!"refresh".equals(getTokenType(refreshToken))) {
+            throw new JwtException("Token is not a refresh token");
+        }
+
+        String npub = getNpubFromToken(refreshToken);
+        if (npub == null) {
+            throw new JwtException("Cannot extract npub from refresh token");
+        }
+
+        return createAccessToken(npub);
     }
 }

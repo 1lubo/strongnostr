@@ -23,7 +23,7 @@ public class User {
      */
     @NotBlank(message = "Nostr public key is required")
     @Indexed(unique = true)
-    private String nostrPublicKey;
+    private String npub;
 
     /**
      * Nostr public key in hex format (for internal operations & verification)
@@ -31,7 +31,7 @@ public class User {
      */
     @NotBlank(message = "Nostr public key hex is required")
     @Indexed(unique = true)
-    private String nostrPublicKeyHex;
+    private String nPubHex;
 
     /**
      * Nostr profile metadata (NIP-01 standard)
@@ -40,14 +40,18 @@ public class User {
 
     private boolean verified = false;
 
-    public User(String username, String nostrPublicKey, String nostrPublicKeyHex) {
+    public User(String username, String npub, String nPubHex) {
         this.username = username;
-        this.nostrPublicKey = nostrPublicKey;
-        this.nostrPublicKeyHex = nostrPublicKeyHex;
+        this.npub = npub;
+        this.nPubHex = nPubHex;
     }
 
     public String getId() {
         return id;
+    }
+
+    public String getnPub() {
+        return npub;
     }
 
     public NostrUserProfile getNostrProfile() {
