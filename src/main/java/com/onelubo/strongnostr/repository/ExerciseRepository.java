@@ -1,6 +1,6 @@
 package com.onelubo.strongnostr.repository;
 
-import com.onelubo.strongnostr.model.Exercise;
+import com.onelubo.strongnostr.model.workout.Exercise;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

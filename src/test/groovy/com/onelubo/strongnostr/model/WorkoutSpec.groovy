@@ -1,5 +1,7 @@
 package com.onelubo.strongnostr.model
 
+import com.onelubo.strongnostr.model.workout.Workout
+import com.onelubo.strongnostr.model.workout.WorkoutExercise
 import spock.lang.Specification
 
 class WorkoutSpec extends Specification {

@@ -1,7 +1,7 @@
-package com.onelubo.strongnostr.service;
+package com.onelubo.strongnostr.service.workout;
 
 import com.onelubo.strongnostr.exception.ExerciseNotFoundException;
-import com.onelubo.strongnostr.model.Exercise;
+import com.onelubo.strongnostr.model.workout.Exercise;
 import com.onelubo.strongnostr.repository.ExerciseRepository;
 import org.springframework.stereotype.Service;
 

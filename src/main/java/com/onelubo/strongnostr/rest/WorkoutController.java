@@ -2,8 +2,8 @@ package com.onelubo.strongnostr.rest;
 
 import com.onelubo.strongnostr.dto.ExerciseSetDto;
 import com.onelubo.strongnostr.exception.WorkoutNotFoundException;
-import com.onelubo.strongnostr.model.Workout;
-import com.onelubo.strongnostr.service.WorkoutService;
+import com.onelubo.strongnostr.model.workout.Workout;
+import com.onelubo.strongnostr.service.workout.WorkoutService;
 import jakarta.validation.Valid;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
