@@ -1,5 +1,6 @@
 package com.onelubo.strongnostr.service;
 
+import com.onelubo.strongnostr.dto.nostr.NostrAuthChallenge;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -26,10 +27,11 @@ public class ChallengeStoreRedis implements ChallengeStore {
         cleanupExecutor.scheduleAtFixedRate(this::cleanupExpired, 1, 1, TimeUnit.MINUTES);
     }
     @Override
-    public void storeChallenge(String challengeId, String challenge, long expiresAt) {
-        StoredChallenge stored = new StoredChallenge(challenge, expiresAt, false);
+    public void storeChallenge(NostrAuthChallenge nostrAuthChallenge) {
+        long expiresAt = nostrAuthChallenge.getTimestamp() + CHALLENGE_VALIDITY_SECONDS * 1000L;
+        StoredChallenge stored = new StoredChallenge(nostrAuthChallenge.getChallenge(), expiresAt,false);
         long ttl = expiresAt - System.currentTimeMillis();
-        redisTemplate.opsForValue().set(challengeId, stored, ttl, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(nostrAuthChallenge.getId(), stored, ttl, TimeUnit.MILLISECONDS);
 
     }
 
