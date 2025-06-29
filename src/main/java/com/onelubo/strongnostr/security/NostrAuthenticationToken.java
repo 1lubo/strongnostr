@@ -20,15 +20,6 @@ public class NostrAuthenticationToken extends AbstractAuthenticationToken {
         super.setAuthenticated(true);
     }
 
-    /**
-     * Constructor for unauthenticated token
-     */
-    public NostrAuthenticationToken(String npub) {
-        super(null);
-        this.npub = npub;
-        super.setAuthenticated(false);
-    }
-
     @Override
     public Object getCredentials() {
         return null; // No credentials needed after authentication
@@ -54,10 +45,6 @@ public class NostrAuthenticationToken extends AbstractAuthenticationToken {
             this.details = (NostrAuthenticationDetails) details;
         }
         super.setDetails(details);
-    }
-
-    public NostrAuthenticationDetails getNostrDetails() {
-        return details;
     }
 
     @Override

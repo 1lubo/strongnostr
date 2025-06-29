@@ -93,9 +93,4 @@ public class NostrEvent {
     public void setTags(List<List<String>> tags) {
         this.tags = tags;
     }
-
-    public boolean isAuthEvent() {
-        return kind != null && kind == 22242; // NIP-46 authentication event kind
-    }
-
 }

@@ -78,10 +78,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                    logger.debug("Successfully authenticated user with npub: {}", maskNpub(npub));
+                    logger.info("Successfully authenticated user with npub: {}", maskNpub(npub));
                 }
             } else {
-                logger.debug("Invalid JWT token received");
+                logger.info("Invalid JWT token received");
                 request.setAttribute("jwt_error", "Invalid or expired token");
             }
 

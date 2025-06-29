@@ -46,10 +46,10 @@ class NostrAuthenticationSpec extends BaseNostrSpec {
         authResponse.getStatusCode() == HttpStatus.OK
         def authResult = authResponse.getBody()
         authResult != null
-        authResult.getAccessToken() != null
-        authResult.getRefreshToken() != null
-        authResult.isSuccess()
-        authResult.getMessage() == "Authentication successful"
-        authResult.getUser() != null
+        authResult.accessToken() != null
+        authResult.refreshToken() != null
+        authResult.success()
+        authResult.message() == "Authentication successful"
+        authResult.user() != null
     }
 }

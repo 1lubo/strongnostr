@@ -34,10 +34,10 @@ public class NostrAuthController {
     @PostMapping("/login")
     public ResponseEntity<NostrAuthResult> loginWithNostrEvent(@RequestBody NostrAuthRequest nostrAuthRequest) {
         NostrAuthResult nostrAuthResult = nostrAuthenticationService.authenticateWithNostrEvent(nostrAuthRequest);
-        if (nostrAuthResult.isSuccess()) {
+        if (nostrAuthResult.success()) {
             return ResponseEntity.ok(nostrAuthResult);
         } else {
-            logger.info("Authentication failed: {}", nostrAuthResult.getMessage());
+            logger.info("Authentication failed: {}", nostrAuthResult.message());
             return ResponseEntity.badRequest().body(nostrAuthResult);
         }
     }
