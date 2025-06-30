@@ -36,9 +36,12 @@ public class NostrSecurityConfiguration {
                         auth -> auth
                                 .requestMatchers("/api/v1/nostr/auth/challenge", "/api/v1/nostr/auth/login").permitAll()
                                 .requestMatchers("/api/health", "/api/public/**").permitAll()
-                                .requestMatchers("/actuator/health").permitAll()
-                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                                .anyRequest().permitAll())
+                                .requestMatchers("/actuator", "/actuator/health").permitAll()
+                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api/docs/**","/api-docs",
+                                                 "/api-docs.yaml", "/api-docs.yaml/{group}",
+                                                 "/api-docs/swagger-config", "/api-docs/{group}").permitAll()
+                                .requestMatchers("/api/v1/nostr/workout/**").authenticated()
+                                .anyRequest().denyAll())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(session -> session

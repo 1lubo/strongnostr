@@ -1,5 +1,6 @@
 package com.onelubo.strongnostr.service;
 
+import com.onelubo.strongnostr.dto.nostr.NostrAuthChallenge;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.context.annotation.Profile;
@@ -28,8 +29,10 @@ public class ChallengeStoreInMemory implements ChallengeStore {
     }
 
     @Override
-    public void storeChallenge(String challengeId, String challenge, long expiresAt) {
-        challenges.put(challengeId, new StoredChallenge(challenge, expiresAt, false));
+    public void storeChallenge(NostrAuthChallenge nostrAuthChallenge) {
+        long expiresAt = nostrAuthChallenge.getTimestamp() + CHALLENGE_VALIDITY_SECONDS * 1000L;
+        StoredChallenge stored = new StoredChallenge(nostrAuthChallenge.getChallenge(), expiresAt,false);
+        challenges.put(nostrAuthChallenge.getId(), stored);
     }
 
     @Override

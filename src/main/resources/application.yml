@@ -1,6 +1,11 @@
 spring:
   application:
     name: strongnostr
+    version: '1.0.0'
+    description: Nostr-based fitness tracking application
+
+server:
+  port: 8080
 
 data:
   mongodb:
@@ -18,3 +23,18 @@ crypto:
   provider: BouncyCastle
   curve: secp256k1
   key-size: 256
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+    try-it-out-enabled: true
+    filter: true
+    doc-expansion: none
+    disable-swagger-default-url: true
+  show-actuator: false

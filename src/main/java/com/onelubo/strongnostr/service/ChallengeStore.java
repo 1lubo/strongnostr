@@ -1,9 +1,13 @@
 package com.onelubo.strongnostr.service;
 
+import com.onelubo.strongnostr.dto.nostr.NostrAuthChallenge;
+
 import java.util.Optional;
 
 public interface ChallengeStore {
-    void storeChallenge(String challengeId, String challenge, long expiresAt);
+    long CHALLENGE_VALIDITY_SECONDS = 300;
+
+    void storeChallenge(NostrAuthChallenge nostrAuthChallenge);
     Optional<StoredChallenge> getChallenge(String challengeId);
     boolean markChallengeAsUsed(String challengeId);
     default void cleanupExpired() {}

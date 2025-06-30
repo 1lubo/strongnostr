@@ -5,20 +5,22 @@ import com.onelubo.strongnostr.model.workout.WorkoutExercise
 import spock.lang.Specification
 
 class WorkoutSpec extends Specification {
+    
+    final String VALID_NPUB = "npub1examplevalidpubkey1234567890abcdefg"
 
     def "calculateMetrics sets all metrics to zero or null when exercises list is empty"() {
         given:
-        def workout = new Workout()
+        def workout = new Workout(VALID_NPUB)
         workout.exercises = []
 
         when:
         workout.calculateMetrics()
 
         then:
-        workout.totalVolume == 0.0
-        workout.totalSets == 0
-        workout.totalReps == 0
-        workout.averageRpe == null
+        workout.getTotalVolume() == 0.0
+        workout.getTotalSets() == 0
+        workout.getTotalReps() == 0
+        workout.getAverageRpe() == null
     }
 
     def "calculateMetrics calculates correct metrics for single exercise with all values"() {
@@ -30,18 +32,18 @@ class WorkoutSpec extends Specification {
             getAverageRpe() >> 8.0
             getTotalRestTimeSeconds() >> 180
         }
-        def workout = new Workout()
+        def workout = new Workout(VALID_NPUB)
         workout.exercises = [exercise]
 
         when:
         workout.calculateMetrics()
 
         then:
-        workout.totalVolume == 100.0
-        workout.totalSets == 3
-        workout.totalReps == 24
-        workout.averageRpe == 8.0
-        workout.durationSeconds == 180
+        workout.getTotalVolume() == 100.0
+        workout.getTotalSets() == 3
+        workout.getTotalReps() == 24
+        workout.getAverageRpe() == 8.0
+        workout.getDurationSeconds() == 180
     }
 
     def "calculateMetrics averages RPE only for exercises with non-null RPE"() {
@@ -67,18 +69,18 @@ class WorkoutSpec extends Specification {
             getAverageRpe() >> 9.0
             getTotalRestTimeSeconds() >> 30
         }
-        def workout = new Workout()
+        def workout = new Workout(VALID_NPUB)
         workout.exercises = [exercise1, exercise2, exercise3]
 
         when:
         workout.calculateMetrics()
 
         then:
-        workout.totalVolume == 150.0
-        workout.totalSets == 7
-        workout.totalReps == 35
-        workout.averageRpe == 8.0
-        workout.durationSeconds == 210
+        workout.getTotalVolume() == 150.0
+        workout.getTotalSets() == 7
+        workout.getTotalReps() == 35
+        workout.getAverageRpe() == 8.0
+        workout.getDurationSeconds() == 210
     }
 
     def "calculateMetrics sets averageRpe to zero if all exercises have null RPE"() {
@@ -104,10 +106,10 @@ class WorkoutSpec extends Specification {
         workout.calculateMetrics()
 
         then:
-        workout.totalVolume == 30.0
-        workout.totalSets == 3
-        workout.totalReps == 15
-        workout.averageRpe == 0.0
-        workout.durationSeconds == 30
+        workout.getTotalVolume() == 30.0
+        workout.getTotalSets() == 3
+        workout.getTotalReps() == 15
+        workout.getAverageRpe() == 0.0
+        workout.getDurationSeconds() == 30
     }
 }

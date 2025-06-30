@@ -33,9 +33,10 @@ public class NostrAuthenticationService {
     }
 
     public NostrAuthChallenge generateAuthChallenge() {
-        String challenge = CHALLENGE_PREFIX + UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
+        String challenge = CHALLENGE_PREFIX + id;
         long timestamp = Instant.now().getEpochSecond();
-        return new NostrAuthChallenge(challenge, timestamp);
+        return new NostrAuthChallenge(id, challenge, timestamp);
     }
 
     public NostrAuthResult authenticateWithNostrEvent(NostrAuthRequest nostrAuthRequest) {

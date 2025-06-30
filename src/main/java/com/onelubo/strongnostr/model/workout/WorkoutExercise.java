@@ -1,5 +1,6 @@
 package com.onelubo.strongnostr.model.workout;
 
+import com.onelubo.strongnostr.dto.WorkoutExerciseResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -112,6 +113,20 @@ public class WorkoutExercise {
             sets.add(set);
             this.calculateMetrics();
         }
+    }
+
+    public WorkoutExerciseResponse toWorkoutExerciseResponse() {
+        return new WorkoutExerciseResponse(
+                exerciseId,
+                exerciseName,
+                equipment,
+                sets,
+                totalVolume,
+                averageRpe,
+                totalReps,
+                totalRestTimeSeconds,
+                notes
+        );
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.onelubo.strongnostr.model.workout;
 
+import com.onelubo.strongnostr.dto.WorkoutResponse;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.annotation.CreatedDate;
@@ -20,7 +21,7 @@ public class Workout {
 
     @NotNull(message = "User ID is required")
     @Indexed(unique = true)
-    private String userId;
+    private String userNPub;
 
     @NotNull(message = "Workout date is required")
     @Indexed
@@ -44,6 +45,11 @@ public class Workout {
 
     @LastModifiedDate
     private OffsetDateTime updatedAt;
+
+    public Workout(String userNPub) {
+        this.userNPub = userNPub;
+        this.workoutDate = OffsetDateTime.now();
+    }
 
     public Workout() {}
 
@@ -112,6 +118,42 @@ public class Workout {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Double getTotalVolume() {
+        return totalVolume;
+    }
+
+    public Integer getTotalSets() {
+        return totalSets;
+    }
+
+    public Integer getTotalReps() {
+        return totalReps;
+    }
+
+    public Double getAverageRpe() {
+        return averageRpe;
+    }
+
+    public Integer getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public WorkoutResponse toWorkoutResponse() {
+        return new WorkoutResponse(
+                id,
+                userNPub,
+                workoutDate.toString(),
+                exercises.stream().map(WorkoutExercise::toWorkoutExerciseResponse).toList(),
+                totalVolume,
+                totalSets,
+                totalReps,
+                averageRpe,
+                durationSeconds,
+                notes,
+                isPublic
+        );
     }
 
     @Override
