@@ -1,5 +1,6 @@
 package com.onelubo.strongnostr.model.workout;
 
+import com.onelubo.strongnostr.dto.WorkoutResponse;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.annotation.CreatedDate;
@@ -137,6 +138,22 @@ public class Workout {
 
     public Integer getDurationSeconds() {
         return durationSeconds;
+    }
+
+    public WorkoutResponse toWorkoutResponse() {
+        return new WorkoutResponse(
+                id,
+                userNPub,
+                workoutDate.toString(),
+                exercises.stream().map(WorkoutExercise::toWorkoutExerciseResponse).toList(),
+                totalVolume,
+                totalSets,
+                totalReps,
+                averageRpe,
+                durationSeconds,
+                notes,
+                isPublic
+        );
     }
 
     @Override

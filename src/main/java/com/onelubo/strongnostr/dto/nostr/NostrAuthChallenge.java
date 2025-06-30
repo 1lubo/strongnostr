@@ -12,7 +12,7 @@ public class NostrAuthChallenge {
         this.id = id;
         this.challenge = challenge;
         this.timestamp = timestamp;
-        this.message = String.format("Strong Nostr authentication challenge: '%s' at '%s'", challenge, Instant.ofEpochMilli(timestamp).toString());
+        this.message = String.format("'%s' at '%s'", challenge, Instant.ofEpochMilli(timestamp).toString());
     }
 
     public  String getId() { return  this.id; }

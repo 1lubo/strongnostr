@@ -1,6 +1,7 @@
 package com.onelubo.strongnostr.rest;
 
 import com.onelubo.strongnostr.dto.ExerciseSetDto;
+import com.onelubo.strongnostr.dto.WorkoutResponse;
 import com.onelubo.strongnostr.exception.WorkoutNotFoundException;
 import com.onelubo.strongnostr.model.workout.Workout;
 import com.onelubo.strongnostr.service.workout.WorkoutService;
@@ -30,7 +31,7 @@ public class WorkoutController {
     public ResponseEntity<?> getWorkoutById(@PathVariable("workoutId") String workoutId, Authentication authentication) {
         try {
             Workout workout = workoutService.getWorkoutById(workoutId);
-            return ResponseEntity.ok(workout);
+            return ResponseEntity.ok(workout.toWorkoutResponse());
         } catch (WorkoutNotFoundException e) {
             return ResponseEntity.status(404).body(String.format("Workout with ID '%s' not found", workoutId));
         }
@@ -45,7 +46,7 @@ public class WorkoutController {
         String userNPub = authentication.getName();
 
         Workout createdWorkout = workoutService.createWorkout(workoutDto.getExercise(), workoutDto.getWorkoutSet(), userNPub);
-        return ResponseEntity.ok(createdWorkout);
+        return ResponseEntity.ok(createdWorkout.toWorkoutResponse());
     }
 
     @PostMapping("/addExercise/{workoutId}")
@@ -55,7 +56,7 @@ public class WorkoutController {
             Workout existingWorkout = workoutService.getWorkoutById(workoutId);
             Workout updatedWorkout = workoutService.addExerciseToWorkout(existingWorkout, workoutDto.getExercise(),
                                                        workoutDto.getWorkoutSet());
-            return ResponseEntity.ok(updatedWorkout);
+            return ResponseEntity.ok(updatedWorkout.toWorkoutResponse());
 
         } catch (WorkoutNotFoundException e) {
             return ResponseEntity.status(404).body("Workout with ID " + workoutId + " not found");
@@ -63,10 +64,10 @@ public class WorkoutController {
     }
 
     @GetMapping()
-    public ResponseEntity<List<Workout>> getWorkouts(Authentication authentication, @RequestParam(defaultValue = "0") int page,
-                                                     @RequestParam(defaultValue = "10") int size){
+    public ResponseEntity<List<WorkoutResponse>> getWorkouts(Authentication authentication, @RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "10") int size){
         String userNPub = authentication.getName();
         List<Workout> workouts = workoutService.getWorkoutsByUser(userNPub, page, size);
-        return ResponseEntity.ok(workouts);
+        return ResponseEntity.ok(workouts.stream().map(Workout::toWorkoutResponse).toList());
     }
 }
