@@ -59,7 +59,7 @@ class BaseNostrSpec extends Specification {
                 npub: npub,
                 content: challenge,
                 tags: [],
-                createdAt: System.currentTimeMillis() / 1000, // Convert to seconds
+                createdAt: System.currentTimeMillis(),
                 signature: null
         )
 
