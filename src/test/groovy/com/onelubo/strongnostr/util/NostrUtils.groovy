@@ -38,7 +38,7 @@ class NostrUtils {
     static NostrEvent createValidAuthEvent(String npub, int kind) {
         NostrEvent event = new NostrEvent()
         event.setnPub(npub)
-        event.setCreatedAt(Instant.now().getEpochSecond())
+        event.setCreatedAt(Instant.now().toEpochMilli())
         event.setKind(kind)
         event.setContent("Strong Nostr authentication challenge: " + UUID.randomUUID().toString() + " at " + Instant.now().getEpochSecond())
         event.setSignature(VALID_SIGNATURE)

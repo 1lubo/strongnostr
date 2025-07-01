@@ -35,7 +35,7 @@ public class NostrAuthenticationService {
     public NostrAuthChallenge generateAuthChallenge() {
         String id = UUID.randomUUID().toString();
         String challenge = CHALLENGE_PREFIX + id;
-        long timestamp = Instant.now().getEpochSecond();
+        long timestamp = Instant.now().toEpochMilli();
         return new NostrAuthChallenge(id, challenge, timestamp);
     }
 
@@ -71,7 +71,7 @@ public class NostrAuthenticationService {
     }
 
     private boolean isValidChallenge(String challenge, long timestamp) {
-        long currentTime = Instant.now().getEpochSecond();
+        long currentTime = Instant.now().toEpochMilli();
 
         if (Math.abs(currentTime - timestamp) > CHALLENGE_VALIDITY_SECONDS) {
             return false;
