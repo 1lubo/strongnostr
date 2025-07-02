@@ -12,6 +12,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 import java.util.List;
 
@@ -21,17 +22,20 @@ import java.util.List;
 public class NostrSecurityConfiguration {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtRequestFilter jwtRequestFilter;
+    private final CorsConfigurationSource corsConfigurationSource;
 
-    public NostrSecurityConfiguration(JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, JwtRequestFilter jwtRequestFilter) {
+    public NostrSecurityConfiguration(JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+                                      JwtRequestFilter jwtRequestFilter, CorsConfigurationSource corsConfigurationSource) {
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.jwtRequestFilter = jwtRequestFilter;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(
                         auth -> auth
                                 .requestMatchers("/api/v1/nostr/auth/challenge", "/api/v1/nostr/auth/login").permitAll()
@@ -50,19 +54,14 @@ public class NostrSecurityConfiguration {
                 .build();
     }
 
-    /**
-     * CORS configuration for frontend integration
-     */
+    //TODO: can be removed after testing
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*")); // Configure for your frontend
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+    public CommonsRequestLoggingFilter logFilter() {
+        CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
+        filter.setIncludeQueryString(true);
+        filter.setIncludePayload(true);
+        filter.setMaxPayloadLength(10000);
+        filter.setIncludeHeaders(false);
+        return filter;
     }
 }

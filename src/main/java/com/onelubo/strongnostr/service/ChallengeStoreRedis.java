@@ -32,7 +32,6 @@ public class ChallengeStoreRedis implements ChallengeStore {
         StoredChallenge stored = new StoredChallenge(nostrAuthChallenge.getChallenge(), expiresAt,false);
         long ttl = expiresAt - System.currentTimeMillis();
         redisTemplate.opsForValue().set(nostrAuthChallenge.getId(), stored, ttl, TimeUnit.MILLISECONDS);
-
     }
 
     @Override
