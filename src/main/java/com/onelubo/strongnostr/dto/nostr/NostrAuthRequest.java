@@ -35,4 +35,13 @@ public class NostrAuthRequest {
     public String getChallengeId() {
         return challengeId;
     }
+
+    @Override
+    public String toString() {
+        return "NostrAuthRequest{" +
+                "nostrEvent=" + nostrEvent +
+                ", challengeId='" + challengeId + '\'' +
+                ", userProfile=" + userProfile +
+                '}';
+    }
 }

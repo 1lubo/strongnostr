@@ -38,3 +38,8 @@ springdoc:
     doc-expansion: none
     disable-swagger-default-url: true
   show-actuator: false
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG

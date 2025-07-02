@@ -3,6 +3,7 @@ package com.onelubo.strongnostr
 import com.onelubo.strongnostr.dto.nostr.NostrAuthChallenge
 import com.onelubo.strongnostr.dto.nostr.NostrAuthRequest
 import com.onelubo.strongnostr.dto.nostr.NostrAuthResult
+import com.onelubo.strongnostr.util.NostrUtils
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 
@@ -30,12 +31,12 @@ class NostrAuthenticationSpec extends BaseNostrSpec {
 
         when: "the user signs and submits the challenge"
         // Use the new method that properly signs the event ID
-        def nostrEvent = createSignedNostrEvent(npub, nSecHex, challenge.getChallenge())
+        def nostrEvent = NostrUtils.createSignedNostrEvent(npub, nSecHex, challenge.getChallenge())
 
         def authRequest = [
                 challengeId: challenge.getId(),
                 nostrEvent: nostrEvent,
-                userProfile: createNostrUserProfile("fiatJaf@nostr.com", "fiatjaf", "https://example.com/avatar.png")
+                userProfile: NostrUtils.createNostrUserProfile("fiatJaf@nostr.com", "fiatjaf", "https://example.com/avatar.png")
         ] as NostrAuthRequest
 
         ResponseEntity<NostrAuthResult> authResponse = restTemplate.postForEntity("${baseUrl}/api/v1/nostr/auth/login",

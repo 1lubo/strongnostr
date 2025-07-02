@@ -1,16 +1,14 @@
 package com.onelubo.strongnostr.util
 
+import com.onelubo.strongnostr.dto.nostr.NostrAuthChallenge
+import com.onelubo.strongnostr.dto.nostr.NostrUserProfile
 import com.onelubo.strongnostr.nostr.NostrEvent
-import com.onelubo.strongnostr.nostr.NostrEventVerifier
 import com.onelubo.strongnostr.nostr.NostrKeyManager
-import org.bouncycastle.crypto.params.ECDomainParameters
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.spec.ECParameterSpec
-import org.bouncycastle.math.ec.ECPoint
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
-import java.security.SecureRandom
 import java.time.Instant
 
 class NostrUtils {
@@ -22,32 +20,19 @@ class NostrUtils {
     public static final String VALID_PUBLIC_KEY_HEX = "1afe0c74e3d7784eba93a5e3fa554a6eeb01928d12739ae8ba4832786808e36d"
     public static final String INVALID_SIGNATURE = "invalidsignature1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
     public static final int VALID_EVENT_KIND = 22242 // Assuming this is the kind for authentication events
+    public static final String CHALLENGE_PREFIX = "Strong Nostr authentication challenge: ";
 
     private static final ECParameterSpec secp256k1Spec = ECNamedCurveTable.getParameterSpec("secp256k1")
-    private static final ECDomainParameters domainParameters = new ECDomainParameters(
-            secp256k1Spec.getCurve(),
-            secp256k1Spec.getG(),
-            secp256k1Spec.getN(),
-            secp256k1Spec.getH()
-    )
 
     private static final SchnorrSigner schnorrSigner = new SchnorrSigner()
 
-    private static final NostrEventVerifier nostrEventVerifier = new NostrEventVerifier(new NostrKeyManager())
 
-    static NostrEvent createValidAuthEvent(String npub, int kind) {
-        NostrEvent event = new NostrEvent()
-        event.setNpub(npub)
-        event.setCreatedAt(Instant.now().toEpochMilli())
-        event.setKind(kind)
-        event.setContent("Strong Nostr authentication challenge: " + UUID.randomUUID().toString() + " at " + Instant.now().getEpochSecond())
-        event.setSignature(VALID_SIGNATURE)
-        event.setTags(List.of(["tag1", "tag2"], ["tag3", "tag4"]))
-        def serialized = NostrEventVerifier.serializeEventForId(event)
-        def digest = MessageDigest.getInstance("SHA-256")
-        def hash = digest.digest(serialized.getBytes(StandardCharsets.UTF_8) as byte[])
-        event.setId(HexFormat.of().formatHex(hash))
-        return event
+    static createNostrUserProfile(String nip05, String name, String picture) {
+        new NostrUserProfile(
+                name: name,
+                avatarUrl: picture,
+                nip05: nip05
+        )
     }
 
     static createSignedNostrEvent(String npub, String nSecHex, String challenge) {
@@ -63,7 +48,7 @@ class NostrUtils {
         )
 
         // Compute the event ID
-        String eventId = nostrEventVerifier.computeEventId(event)
+        String eventId = computeEventId(event)
 
         // Sign the event ID (not the challenge content)
         String signature = schnorrSigner.signEventId(nSecHex, eventId)
@@ -89,135 +74,92 @@ class NostrUtils {
         return hex != null && hex.matches(/^[0-9a-fA-F]+$/) && hex.length() % 2 == 0
     }
 
-    static String signChallenge(String challenge, String privateKeyHex) {
+    static NostrAuthChallenge generateAuthChallenge() {
+        String id = UUID.randomUUID().toString();
+        String challenge = CHALLENGE_PREFIX + id;
+        long timestamp = Instant.now().getEpochSecond();
+        return new NostrAuthChallenge(id, challenge, timestamp);
+    }
+
+
+    private static String computeEventId(NostrEvent nostrEvent) {
         try {
-            // Convert hex private key to BigInteger
-            BigInteger privateKey = new BigInteger(privateKeyHex, 16)
-
-            // Hash the challenge message
-            byte[] messageHash = hashMessage(challenge)
-
-            // Generate Schnorr signature
-            byte[] signature = generateSchnorrSignature(messageHash, privateKey)
-
-            // Return as hex string
-            return bytesToHex(signature)
-
+            String serialized = serializeEventForId(nostrEvent)
+            MessageDigest digest = MessageDigest.getInstance("SHA-256")
+            byte[] hash = digest.digest(serialized.getBytes(StandardCharsets.UTF_8))
+            return HexFormat.of().formatHex(hash)
         } catch (Exception e) {
-            throw new RuntimeException("Failed to sign challenge", e)
+            throw new RuntimeException("Failed to compute event ID", e)
         }
     }
 
-    private static byte[] hashMessage(String message) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256")
-        return digest.digest(message.getBytes(StandardCharsets.UTF_8))
-    }
-
-    private static byte[] generateSchnorrSignature(byte[] messageHash, BigInteger privateKey) throws Exception {
-        // Generate random nonce k
-        BigInteger k = generateNonce(messageHash, privateKey)
-
-        // Calculate R = k * G
-        ECPoint R = domainParameters.getG().multiply(k).normalize()
-
-        // Extract x-coordinate of R (r value)
-        BigInteger r = R.getAffineXCoord().toBigInteger()
-
-        // If R.y is odd, negate k (BIP340 requirement)
-        if (R.getAffineYCoord().toBigInteger().testBit(0)) {
-            k = domainParameters.getN().subtract(k)
-        }
-
-        // Calculate public key point P = d * G
-        ECPoint P = domainParameters.getG().multiply(privateKey).normalize()
-        BigInteger px = P.getAffineXCoord().toBigInteger()
-
-        // Calculate challenge e = H(r || P || m)
-        BigInteger e = calculateChallenge(r, px, messageHash)
-
-        // Calculate s = (k + e * d) mod n
-        BigInteger s = k.add(e.multiply(privateKey)).mod(domainParameters.getN())
-
-        // Return signature as r || s (64 bytes total)
-        return combineSignatureComponents(r, s)
-    }
-
-    private static BigInteger generateNonce(byte[] messageHash, BigInteger privateKey) throws Exception {
-        // Simple deterministic nonce generation (in production, use full RFC 6979)
-        MessageDigest digest = MessageDigest.getInstance("SHA-256")
-
-        // Combine private key and message hash
-        byte[] privateKeyBytes = privateKey.toByteArray()
-        digest.update(privateKeyBytes)
-        digest.update(messageHash)
-
-        // Add some randomness to prevent nonce reuse
-        SecureRandom random = new SecureRandom()
-        byte[] randomBytes = new byte[32]
-        random.nextBytes(randomBytes)
-        digest.update(randomBytes)
-
-        byte[] nonceBytes = digest.digest()
-        BigInteger nonce = new BigInteger(1, nonceBytes)
-
-        // Ensure nonce is within valid range [1, n-1]
-        BigInteger n = domainParameters.getN()
-        nonce = nonce.mod(n.subtract(BigInteger.ONE)).add(BigInteger.ONE)
-
-        return nonce
-    }
-
-    private static BigInteger calculateChallenge(BigInteger r, BigInteger px, byte[] messageHash) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256")
-
-        // Add r (32 bytes, big-endian)
-        byte[] rBytes = bigIntegerToBytes32(r)
-        digest.update(rBytes)
-
-        // Add public key x-coordinate (32 bytes, big-endian)
-        byte[] pxBytes = bigIntegerToBytes32(px)
-        digest.update(pxBytes)
-
-        // Add message hash
-        digest.update(messageHash)
-
-        // Return as BigInteger
-        byte[] challengeBytes = digest.digest()
-        return new BigInteger(1, challengeBytes)
-    }
-
-    private static byte[] bigIntegerToBytes32(BigInteger value) {
-        byte[] bytes = value.toByteArray()
-
-        if (bytes.length == 32) {
-            return bytes
-        } else if (bytes.length > 32) {
-            // Remove leading zero byte if present
-            return Arrays.copyOfRange(bytes, bytes.length - 32, bytes.length)
-        } else {
-            // Pad with leading zeros
-            byte[] padded = new byte[32]
-            System.arraycopy(bytes, 0, padded, 32 - bytes.length, bytes.length)
-            return padded
-        }
-    }
-
-    private static byte[] combineSignatureComponents(BigInteger r, BigInteger s) {
-        byte[] rBytes = bigIntegerToBytes32(r)
-        byte[] sBytes = bigIntegerToBytes32(s)
-
-        byte[] signature = new byte[64]
-        System.arraycopy(rBytes, 0, signature, 0, 32)
-        System.arraycopy(sBytes, 0, signature, 32, 32)
-
-        return signature
-    }
-
-    private static String bytesToHex(byte[] bytes) {
+    private static String serializeEventForId(NostrEvent nostrEvent) {
         StringBuilder sb = new StringBuilder()
-        for (byte b : bytes) {
-            sb.append(String.format("%02x", b))
+        sb.append("[0,\"")
+
+        String pubkey = nostrEvent.getPubkey()
+        if (pubkey == null && nostrEvent.getNpub() != null) {
+            pubkey = convertNpubToHex(nostrEvent.getNpub())
         }
+
+        sb.append(pubkey)
+        sb.append("\",")
+        sb.append(nostrEvent.getCreatedAt())
+        sb.append(",")
+        sb.append(nostrEvent.getKind())
+        sb.append(",")
+        sb.append(serializeTags(nostrEvent.getTags()))
+        sb.append(",\"")
+        sb.append(escapeString(nostrEvent.getContent()))
+        sb.append("\"]")
         return sb.toString()
+    }
+
+    private static String convertNpubToHex(String npub) {
+        try{
+            NostrKeyManager nostrKeyManager = new NostrKeyManager()
+            return nostrKeyManager.npubToHex(npub)
+        } catch(Exception e) {
+            throw new RuntimeException("Failed to convert npub to hex: " + npub, e)
+        }
+    }
+
+    private static String serializeTags(List<List<String>> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return "[]"
+        }
+
+        StringBuilder sb = new StringBuilder("[")
+
+        for (int i = 0; i < tags.size(); i++) {
+            if (i > 0) {
+                sb.append(",")
+            }
+            List<String> tag = tags.get(i)
+            sb.append("[")
+
+            for (int j = 0; j < tag.size(); j++) {
+                if (j > 0) {
+                    sb.append(",")
+                }
+                sb.append("\"").append(escapeString(tag.get(j))).append("\"")
+            }
+            sb.append("]")
+        }
+        sb.append("]")
+
+        return sb.toString()
+    }
+
+    private static String escapeString(String str) {
+        if (str == null) {
+            return ""
+        }
+
+        return str.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
     }
 }

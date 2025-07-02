@@ -28,7 +28,7 @@ public class ChallengeStoreRedis implements ChallengeStore {
     }
     @Override
     public void storeChallenge(NostrAuthChallenge nostrAuthChallenge) {
-        long expiresAt = nostrAuthChallenge.getTimestamp() + CHALLENGE_VALIDITY_SECONDS * 1000L;
+        long expiresAt = (nostrAuthChallenge.getTimestamp()  + CHALLENGE_VALIDITY_SECONDS) * 1000L;
         StoredChallenge stored = new StoredChallenge(nostrAuthChallenge.getChallenge(), expiresAt,false);
         long ttl = expiresAt - System.currentTimeMillis();
         redisTemplate.opsForValue().set(nostrAuthChallenge.getId(), stored, ttl, TimeUnit.MILLISECONDS);

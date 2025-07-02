@@ -161,6 +161,7 @@ public class NostrAuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<NostrAuthResult> loginWithNostrEvent(@RequestBody NostrAuthRequest nostrAuthRequest) {
+        logger.info("Received request: {}", nostrAuthRequest);
         Optional<ChallengeStore.StoredChallenge> storedChallenge = challengeStore.getChallenge(nostrAuthRequest.getChallengeId());
 
         if (storedChallenge.isEmpty() || storedChallenge.get().used()) {
@@ -169,7 +170,8 @@ public class NostrAuthController {
 
         challengeStore.markChallengeAsUsed(nostrAuthRequest.getChallengeId());
 
-        NostrAuthResult nostrAuthResult = nostrAuthenticationService.authenticateWithNostrEvent(nostrAuthRequest);
+        NostrAuthResult nostrAuthResult = nostrAuthenticationService.authenticateWithNostrEvent(nostrAuthRequest,
+                                                                                                storedChallenge.get().challenge());
         if (nostrAuthResult.success()) {
             return ResponseEntity.ok(nostrAuthResult);
         } else {
