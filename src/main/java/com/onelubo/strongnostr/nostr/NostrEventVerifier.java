@@ -53,14 +53,14 @@ public class NostrEventVerifier {
 
             String computedId = computeEventId(nostrEvent);
 
-            logger.debug("=== EVENT VERIFICATION DEBUG ===\nEvent ID (hex): {}\nEvent ID (bytes): {}\nSignature: {}\nPublic Key: {}", computedId, Arrays.toString(HexFormat.of().parseHex(computedId)), nostrEvent.getSignature(), nostrKeyManager.npubToHex(nostrEvent.getnPub()));
+            logger.debug("=== EVENT VERIFICATION DEBUG ===\nEvent ID (hex): {}\nEvent ID (bytes): {}\nSignature: {}\nPublic Key: {}", computedId, Arrays.toString(HexFormat.of().parseHex(computedId)), nostrEvent.getSignature(), nostrKeyManager.npubToHex(nostrEvent.getNpub()));
 
             if (!computedId.equals(nostrEvent.getId())) {
                 logger.info("❌ Event ID mismatch!");
                 return false;
             }
 
-            String publicKeyHex = nostrKeyManager.npubToHex(nostrEvent.getnPub());
+            String publicKeyHex = nostrKeyManager.npubToHex(nostrEvent.getNpub());
 
             return verifySignatureFromHash(computedId, nostrEvent.getSignature(), publicKeyHex);
 
@@ -90,7 +90,7 @@ public class NostrEventVerifier {
     public static String serializeEventForId(NostrEvent nostrEvent) {
         StringBuilder sb = new StringBuilder();
         sb.append("[0,\"");
-        sb.append(nostrEvent.getnPub());
+        sb.append(nostrEvent.getNpub());
         sb.append("\",");
         sb.append(nostrEvent.getCreatedAt());
         sb.append(",");
@@ -261,7 +261,7 @@ public class NostrEventVerifier {
     private boolean isValidEventStructure(NostrEvent nostrEvent) {
         return nostrEvent != null &&
                 nostrEvent.getId() != null && !nostrEvent.getId().trim().isEmpty() &&
-                nostrEvent.getnPub() != null && !nostrEvent.getnPub().trim().isEmpty() &&
+                nostrEvent.getNpub() != null && !nostrEvent.getNpub().trim().isEmpty() &&
                 nostrEvent.getSignature() != null && !nostrEvent.getSignature().trim().isEmpty() &&
                 nostrEvent.getContent() != null &&
                 nostrEvent.getCreatedAt() > 0;

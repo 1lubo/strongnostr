@@ -42,11 +42,11 @@ public class NostrEvent {
         this.id = id;
     }
 
-    public String getnPub() {
+    public String getNpub() {
         return npub;
     }
 
-    public void setnPub(String npub) {
+    public void setNpub(String npub) {
         this.npub = npub;
     }
 
@@ -92,5 +92,18 @@ public class NostrEvent {
 
     public void setTags(List<List<String>> tags) {
         this.tags = tags;
+    }
+
+    @Override
+    public String toString() {
+        return "NostrEvent{" +
+                "id='" + id + '\'' +
+                ", npub='" + npub + '\'' +
+                ", kind=" + kind +
+                ", createdAt=" + createdAt +
+                ", content='" + content + '\'' +
+                ", signature='" + signature + '\'' +
+                ", tags=" + tags +
+                '}';
     }
 }
