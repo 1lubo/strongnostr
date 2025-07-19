@@ -91,10 +91,10 @@ public class NostrUserService {
         int counter = 1;
 
         while (userRepository.existsByUsername(userName)) {
-            userName = baseName + counter++;
+            counter++;
         }
 
-        return  userName;
+        return  userName + counter;
     }
 
     private String generateCleanUserName(String userName) {

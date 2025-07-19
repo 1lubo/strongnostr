@@ -7,6 +7,8 @@ import com.onelubo.strongnostr.model.user.User;
 import com.onelubo.strongnostr.nostr.NostrEvent;
 import com.onelubo.strongnostr.nostr.NostrKeyManager;
 import com.onelubo.strongnostr.security.JwtTokenProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,9 +19,13 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 
+import static com.onelubo.strongnostr.nostr.NostrSignatureVerifier.verifySchnorrSignature;
+
 @Service
 @Transactional
 public class NostrAuthenticationService {
+
+    private final Logger logger = LoggerFactory.getLogger(NostrAuthenticationService.class);
 
     private final NostrUserService nostrUserService;
     private final JwtTokenProvider jwtTokenProvider;
@@ -45,27 +51,35 @@ public class NostrAuthenticationService {
             NostrEvent event = nostrAuthRequest.getNostrEvent();
 
             if (!isValidNostrAuthEvent(event)) {
+                logger.debug("Invalid event received: {}", event);
                 return NostrAuthResult.failure("Invalid nostr event structure");
             }
 
             if (!isValidChallenge(event.getContent(), event.getCreatedAt())) {
+                logger.debug("Invalid or expired challenge: {}", event.getContent());
                 return NostrAuthResult.failure("Invalid or expired challenge");
             }
 
             String computedEventId = computeEventId(event);
 
             if (!computedEventId.equals(event.getId())) {
+                logger.debug("Event ID mismatch: computed={}, expected={}", computedEventId, event.getId());
                 return NostrAuthResult.failure("Event ID mismatch");
             }
 
             if (!event.getContent().contains(expectedChallenge)) {
+                logger.debug("Challenge mismatch: expected={}, received={}", expectedChallenge, event.getContent());
                 return NostrAuthResult.failure("Challenge mismatch");
+            }
+
+            if (!verifySchnorrSignature(event.getPubkey(), computedEventId, event.getSignature())) {
+                logger.debug("Invalid signature for event ID: {}", computedEventId);
+                return NostrAuthResult.failure("Invalid signature");
             }
 
             String nostrPubKey = event.getNpub();
             User user = nostrUserService.getOrCreateUser(nostrPubKey, nostrAuthRequest.getUserProfile());
 
-            user.markAsVerified();
             nostrUserService.saveUser(user);
 
             String accessToken = jwtTokenProvider.createAccessToken(user.getnPub());
